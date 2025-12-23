@@ -1,0 +1,40 @@
+[gd_scene load_steps=7 format=3 uid="uid://bidpihbx86rla"]
+
+[ext_resource type="Script" uid="uid://bt1y43v65uvdc" path="res://scenes/entites/car.gd" id="1_qt2eu"]
+[ext_resource type="Texture2D" uid="uid://dj6qoj5u77c64" path="res://assets/sprites/cars/base_car.png" id="2_qt2eu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sugp2"]
+size = Vector2(20, 32)
+
+[sub_resource type="Curve" id="Curve_qt2eu"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_50v30"]
+curve = SubResource("Curve_qt2eu")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_qt2eu"]
+lifetime_randomness = 0.15
+particle_flag_disable_z = true
+scale_curve = SubResource("CurveTexture_50v30")
+
+[node name="Car" type="CharacterBody2D"]
+script = ExtResource("1_qt2eu")
+tuning_mode = "arcade"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_sugp2")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+rotation = 3.1415927
+texture = ExtResource("2_qt2eu")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
+emitting = false
+amount = 50
+process_material = SubResource("ParticleProcessMaterial_qt2eu")
+
+[node name="TiremarksPos" type="Marker2D" parent="."]
+position = Vector2(0, 18)
