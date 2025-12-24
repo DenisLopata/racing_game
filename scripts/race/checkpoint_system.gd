@@ -25,8 +25,6 @@ func _collect_checkpoints() -> void:
 	# Sort by checkpoint_index
 	checkpoints.sort_custom(func(a, b): return a.checkpoint_index < b.checkpoint_index)
 
-	print("CheckpointSystem: Found %d checkpoints" % checkpoints.size())
-
 ## Register a car to track
 func register_car(car: Car) -> void:
 	car_progress[car.car_id] = -1  # Start before checkpoint 0

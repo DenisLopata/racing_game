@@ -3,6 +3,8 @@ extends Node2D
 const CountdownOverlayScene = preload("res://scenes/UI/countdown_overlay.tscn")
 const ResultsScreenScene = preload("res://scenes/UI/results_screen.tscn")
 const CarScene = preload("res://scenes/entites/car.tscn")
+const RainEffectScene = preload("res://scenes/effects/rain_effect.tscn")
+const FogEffectScene = preload("res://scenes/effects/fog_effect.tscn")
 
 ## Number of AI opponents
 @export var num_ai_opponents: int = 7
@@ -23,7 +25,12 @@ var countdown_overlay: CountdownOverlay
 var results_screen: ResultsScreen
 var player_car: Car
 var ai_cars: Array[Car] = []
-var racing_line: WaypointPath
+
+## Smart pathfinding components
+var track_analyzer: TrackAnalyzer
+var line_generator: RacingLineGenerator
+var debug_drawer: PathDebugDrawer
+var difficulty_paths: Dictionary = {}  # "easy" -> WaypointPath, etc.
 
 ## Camera zoom settings (for debug)
 var camera: Camera2D
@@ -43,7 +50,16 @@ var ai_colors: Array[Color] = [
 	Color(1, 0.6, 0.3),    # Orange
 ]
 
+## Weather grip modifier
+var weather_grip_modifier: float = 1.0
+
+## Selected AI difficulty from settings
+var selected_ai_difficulty: String = "medium"
+
 func _ready() -> void:
+	# Load settings from GameSettings (if available)
+	_apply_game_settings()
+
 	car.tire_marks = tire_marks_line_2d
 	car.surface_manager = surface_manager
 
@@ -60,12 +76,56 @@ func _ready() -> void:
 	# Register player car with RaceManager
 	RaceManager.register_car(car)
 
-	# Create racing line for AI
-	_create_racing_line()
+	# Analyze track and generate racing lines for AI
+	_analyze_track_and_generate_paths()
 
 	# Spawn AI opponents
 	_spawn_ai_cars()
 
+	# Setup race UI (countdown, results screen, signals)
+	_setup_race_ui()
+
+## Apply settings from GameSettings autoload
+func _apply_game_settings() -> void:
+	# Check if GameSettings exists (might be running scene directly for testing)
+	if not Engine.has_singleton("GameSettings") and not has_node("/root/GameSettings"):
+		return
+
+	# Apply race settings
+	RaceManager.total_laps = GameSettings.lap_count
+	num_ai_opponents = GameSettings.opponent_count
+	selected_ai_difficulty = GameSettings.ai_difficulty
+
+	# Apply weather
+	_apply_weather(GameSettings.weather)
+
+## Apply weather effects
+func _apply_weather(weather: String) -> void:
+	match weather:
+		"clear":
+			weather_grip_modifier = 1.0
+		"rain":
+			weather_grip_modifier = 0.7
+			_spawn_rain_effect()
+		"fog":
+			weather_grip_modifier = 0.9
+			_spawn_fog_effect()
+		_:
+			weather_grip_modifier = 1.0
+
+	# Apply to surface manager if it supports weather
+	if surface_manager and surface_manager.has_method("set_weather_modifier"):
+		surface_manager.set_weather_modifier(weather_grip_modifier)
+
+func _spawn_rain_effect() -> void:
+	var rain = RainEffectScene.instantiate()
+	add_child(rain)
+
+func _spawn_fog_effect() -> void:
+	var fog = FogEffectScene.instantiate()
+	add_child(fog)
+
+func _setup_race_ui() -> void:
 	# Create and add countdown overlay
 	countdown_overlay = CountdownOverlayScene.instantiate()
 	add_child(countdown_overlay)
@@ -86,56 +146,39 @@ func _ready() -> void:
 	await get_tree().create_timer(0.5).timeout
 	RaceManager.start_countdown()
 
-func _create_racing_line() -> void:
-	# Create a simple oval racing line for testing
-	# In production, this should be a manually created Path2D in the editor
-	racing_line = WaypointPath.new()
-	racing_line.name = "RacingLine"
-	add_child(racing_line)
+func _analyze_track_and_generate_paths() -> void:
 
-	# Create an oval path around the track
-	# ADJUST THESE VALUES to match your track layout:
-	var track_center = Vector2(400, 400)  # Center of your track
-	var track_width = 250                  # Half-width of track
-	var track_height = 300                 # Half-height of track
+	# 1. Analyze track structure from tilemap
+	track_analyzer = TrackAnalyzer.new()
+	track_analyzer.analyze(tile_map_layer, grid_start_position)
 
-	racing_line.create_oval_path(
-		track_center,
-		track_width,
-		track_height,
-		24  # Number of points (more = smoother)
-	)
+	# 2. Generate racing lines for different difficulties
+	line_generator = RacingLineGenerator.new()
+	line_generator.generate(track_analyzer, tile_map_layer)
 
-	racing_line.is_closed_loop = true
+	# 3. Convert generated lines to WaypointPaths
+	difficulty_paths = {
+		"expert": _create_waypoint_path_from_points(line_generator.optimal_line, "ExpertPath"),
+		"hard": _create_waypoint_path_from_points(line_generator.racing_line, "HardPath"),
+		"medium": _create_waypoint_path_from_points(line_generator.center_line, "MediumPath"),
+		"easy": _create_waypoint_path_from_points(line_generator.wide_line, "EasyPath")
+	}
 
-	# DEBUG: Draw the racing line so we can see it
-	_draw_debug_racing_line()
+	# 4. Create debug drawer to visualize all lines
+	debug_drawer = PathDebugDrawer.new()
+	debug_drawer.name = "PathDebugDrawer"
+	add_child(debug_drawer)
+	debug_drawer.setup(line_generator)
 
-func _draw_debug_racing_line() -> void:
-	# Create a visible line showing the AI racing path
-	var debug_line = Line2D.new()
-	debug_line.name = "DebugRacingLine"
-	debug_line.width = 3
-	debug_line.default_color = Color(1, 0, 0, 0.7)  # Red, semi-transparent
-	add_child(debug_line)
-
-	# Sample points along the path
-	if racing_line.curve:
-		var path_length = racing_line.curve.get_baked_length()
-		var num_samples = 50
-		for i in num_samples + 1:
-			var offset = (float(i) / num_samples) * path_length
-			var point = racing_line.get_point_at_offset(offset)
-			debug_line.add_point(point)
-
-		# Close the loop
-		debug_line.add_point(debug_line.points[0])
-
-	print("DEBUG: Racing line drawn - adjust track_center, track_width, track_height in _create_racing_line()")
+func _create_waypoint_path_from_points(points: PackedVector2Array, path_name: String) -> WaypointPath:
+	var path = WaypointPath.new()
+	path.name = path_name
+	add_child(path)
+	path.create_from_points(points, true)
+	path.is_closed_loop = true
+	return path
 
 func _spawn_ai_cars() -> void:
-	var difficulties = ["easy", "easy", "medium", "medium", "hard", "hard", "expert"]
-
 	for i in num_ai_opponents:
 		var ai_car = CarScene.instantiate() as Car
 		ai_car.name = "AICar_%d" % i
@@ -161,13 +204,12 @@ func _spawn_ai_cars() -> void:
 		ai_car.surface_manager = surface_manager
 		ai_car.tire_marks = _create_tire_marks_for_ai()
 
-		# Create and assign AI controller
+		# Create and assign AI controller with difficulty-based paths
 		var ai_controller = AIController.new()
-		ai_controller.set_waypoint_path(racing_line)
+		ai_controller.set_difficulty_paths(difficulty_paths)
 
-		# Set difficulty
-		var difficulty = difficulties[i % difficulties.size()]
-		ai_controller.set_difficulty(difficulty)
+		# Set difficulty from settings (all AI use same difficulty)
+		ai_controller.set_difficulty(selected_ai_difficulty)
 
 		ai_car.set_controller(ai_controller)
 
@@ -179,8 +221,6 @@ func _spawn_ai_cars() -> void:
 		RaceManager.register_car(ai_car)
 
 		ai_cars.append(ai_car)
-
-	print("Spawned %d AI opponents" % ai_cars.size())
 
 func _create_tire_marks_for_ai() -> Line2D:
 	var tire_marks = Line2D.new()
@@ -200,6 +240,26 @@ func _input(event: InputEvent) -> void:
 			zoom_level = clamp(zoom_level - ZOOM_SPEED, ZOOM_MIN, ZOOM_MAX)
 			if camera:
 				camera.zoom = Vector2(zoom_level, zoom_level)
+
+	# Debug keyboard shortcuts for racing line visualization
+	if event is InputEventKey and event.pressed:
+		match event.keycode:
+			KEY_F1:
+				# Toggle all debug lines on/off
+				if debug_drawer:
+					debug_drawer.toggle_all()
+			KEY_F2:
+				# Cycle through individual lines
+				if debug_drawer:
+					debug_drawer.cycle_lines()
+			KEY_F3:
+				# Toggle boundary lines
+				if debug_drawer:
+					debug_drawer.toggle_boundaries()
+			KEY_F4:
+				# Print debug legend
+				if debug_drawer:
+					print(debug_drawer.get_legend())
 
 func _process(_delta: float) -> void:
 	# Update position display during race
@@ -249,7 +309,7 @@ func _on_restart_requested() -> void:
 	get_tree().reload_current_scene()
 
 func _on_quit_requested() -> void:
-	get_tree().quit()
+	get_tree().change_scene_to_file("res://scenes/UI/main_menu.tscn")
 
 func _on_car_finished(finished_car: Car, position: int, total_time: float) -> void:
 	if finished_car == player_car:

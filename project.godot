@@ -11,13 +11,14 @@ config_version=5
 [application]
 
 config/name="1-Racer"
-run/main_scene="res://scenes/world/main.tscn"
+run/main_scene="res://scenes/UI/main_menu.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 RaceManager="*res://scripts/race/race_manager.gd"
+GameSettings="*res://scripts/game_settings.gd"
 
 [display]
 

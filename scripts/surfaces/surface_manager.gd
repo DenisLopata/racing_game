@@ -11,5 +11,24 @@ var surface_data: Dictionary = {
 	"sand": SurfaceProperties.new(0.5, 0.5, 0.7, 1.8, 0.5, 0.6, 0.7, 1.4)
 }
 
+var weather_modifier: float = 1.0
+
+func set_weather_modifier(modifier: float) -> void:
+	weather_modifier = modifier
+
 func get_surface_properties(surface: String) -> SurfaceProperties:
-	return surface_data.get(surface, surface_data["road"])
+	var props = surface_data.get(surface, surface_data["road"])
+	if weather_modifier != 1.0:
+		# Apply weather modifier to grip-related properties
+		var modified = SurfaceProperties.new(
+			props.speed_multiplier,
+			props.friction_multiplier * weather_modifier,
+			props.acceleration_multiplier * weather_modifier,
+			props.drift_multiplier,
+			props.grip_multiplier * weather_modifier,
+			props.brake_multiplier * weather_modifier,
+			props.rotation_multiplier,
+			props.drag_multiplier
+		)
+		return modified
+	return props

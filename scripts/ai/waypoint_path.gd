@@ -16,7 +16,6 @@ var path_length: float = 0.0
 func _ready() -> void:
 	if curve:
 		path_length = curve.get_baked_length()
-		print("WaypointPath: Path length = %.1f" % path_length)
 
 ## Get total path length
 func get_path_length() -> float:
@@ -135,5 +134,36 @@ func create_oval_path(center: Vector2, radius_x: float, radius_y: float, points:
 		var control_out = Vector2(cos(tangent_angle), sin(tangent_angle)) * tangent_length
 
 		curve.add_point(point, control_in, control_out)
+
+	path_length = curve.get_baked_length()
+
+## Create path from an array of world positions
+func create_from_points(points: PackedVector2Array, smooth: bool = true) -> void:
+	if points.size() < 2:
+		push_warning("WaypointPath: Need at least 2 points to create path")
+		return
+
+	curve = Curve2D.new()
+
+	for i in points.size():
+		var point = points[i]
+
+		if smooth and points.size() > 2:
+			# Calculate control points for smooth curve
+			var prev_idx = (i - 1 + points.size()) % points.size()
+			var next_idx = (i + 1) % points.size()
+
+			var prev_pt = points[prev_idx]
+			var next_pt = points[next_idx]
+
+			var tangent = (next_pt - prev_pt).normalized()
+			var tangent_length = (point.distance_to(prev_pt) + point.distance_to(next_pt)) * 0.25
+
+			var control_in = -tangent * tangent_length
+			var control_out = tangent * tangent_length
+
+			curve.add_point(point, control_in, control_out)
+		else:
+			curve.add_point(point)
 
 	path_length = curve.get_baked_length()

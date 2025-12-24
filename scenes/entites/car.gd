@@ -99,8 +99,6 @@ func apply_tuning(mode: String) -> void:
 	AIR_DRAG_COEFF = preset["AIR_DRAG_COEFF"]
 	DRIFT_THRESHOLD = preset["DRIFT_THRESHOLD"]
 
-	print("Applied tuning preset:", mode)
-
 # -------------------------
 # Physics process
 # -------------------------
@@ -205,7 +203,6 @@ func update_drift_effects(drift_value: float) -> void:
 	
 	drift_particles.emitting = drift_value > 60
 	drift_particles.amount = int(20 + (drift_value / 100) * 80)
-	print(drift_value)
 	# Tire marks
 	if drift_value > 100:
 		tire_marks.add_point(tiremarks_pos.global_position)
