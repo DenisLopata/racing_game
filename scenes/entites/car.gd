@@ -7,6 +7,13 @@ var drive_type: String = "RWD"
 # Active tuning preset
 @export_enum("arcade", "realistic", "hybrid")
 var tuning_mode: String = "hybrid"
+
+# Controller (player or AI)
+var controller: CarController = null
+var car_id: int = -1
+
+# Current input state from controller
+var current_input: CarController.InputState = null
 # Core variables (will be set from tuning dictionary)
 var ACCELERATION: float
 var MAX_SPEED: float
@@ -109,30 +116,31 @@ func _physics_process(delta: float) -> void:
 # Input
 # -------------------------
 func handle_input(delta: float) -> void:
+	# Get input from controller
+	if controller != null:
+		current_input = controller.get_input()
+	else:
+		current_input = CarController.InputState.new()
+
 	var force = Vector2.ZERO
 	var forward = Vector2.UP.rotated(rotation)
 
-	if Input.is_action_pressed("ui_up"):
+	if current_input.throttle > 0:
 		# Forward acceleration
-		force = forward * ACCELERATION * surface_props.acceleration_multiplier
-	elif Input.is_action_pressed("ui_down"):
+		force = forward * ACCELERATION * surface_props.acceleration_multiplier * current_input.throttle
+	elif current_input.brake > 0:
 		if velocity.dot(forward) > 0:
 			# Braking when moving forward
-			velocity -= forward * BRAKE_FORCE * delta * surface_props.brake_multiplier
+			velocity -= forward * BRAKE_FORCE * delta * surface_props.brake_multiplier * current_input.brake
 		else:
 			# Reverse acceleration
-			force = -forward * (ACCELERATION * 0.6) * surface_props.acceleration_multiplier
+			force = -forward * (ACCELERATION * 0.6) * surface_props.acceleration_multiplier * current_input.brake
 
 	velocity += force * delta
 
 	# Steering only if moving
 	if velocity.length() > 10:
-		var direction := 0.0
-		if Input.is_action_pressed("ui_left"):
-			direction -= 1
-		if Input.is_action_pressed("ui_right"):
-			direction += 1
-
+		var direction := current_input.steer
 		var steer_strength = clamp(velocity.length() / (MAX_SPEED * 0.7), 0.2, 1.0)
 
 		match drive_type:
@@ -150,8 +158,9 @@ func handle_input(delta: float) -> void:
 func apply_physics(delta: float) -> void:
 	var forward = Vector2.UP.rotated(rotation)
 
-	# Apply friction / rolling resistance
-	if not Input.is_action_pressed("ui_up") and not Input.is_action_pressed("ui_down"):
+	# Apply friction / rolling resistance (when not accelerating or braking)
+	var is_coasting = current_input == null or (current_input.throttle <= 0 and current_input.brake <= 0)
+	if is_coasting:
 		velocity = velocity.move_toward(Vector2.ZERO, FRICTION * surface_props.friction_multiplier * delta)
 
 	# Apply aerodynamic drag
@@ -184,11 +193,10 @@ func apply_physics(delta: float) -> void:
 
 func handle_drift(delta: float) -> void:
 	drift_manager.surface_drift_multiplier = surface_props.drift_multiplier
-	var steering_input: float = Input.get_action_strength("ui_left") - Input.get_action_strength("ui_right")
+	var steering_input: float = -current_input.steer if current_input != null else 0.0
 
 	var forward = Vector2.UP.rotated(rotation)
 	var drift_value = drift_manager.update_drift(delta, velocity, forward, steering_input)
-	#var drift_value = drift_manager.update_drift(delta, velocity, forward)
 
 	update_drift_effects(drift_value * 100)
 	
@@ -236,3 +244,13 @@ func update_speed_display(delta: float) -> void:
 	displayed_speed = lerp(displayed_speed, speed_kmh, delta * 5)
 	var speed: String = str(int(displayed_speed)) + " km/h"
 	update_speed.emit(speed)
+
+# -------------------------
+# Controller
+# -------------------------
+func set_controller(new_controller: CarController) -> void:
+	if controller != null:
+		controller.on_detached()
+	controller = new_controller
+	if controller != null:
+		controller.on_attached(self)

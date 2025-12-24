@@ -5,6 +5,19 @@ extends Control
 @onready var lbl_lap: Label = $HBoxContainer/lblLap
 @onready var lbl_lap_time: Label = $HBoxContainer/lblLapTime
 
+var lbl_position: Label
+
+func _ready() -> void:
+	# Create position label if it doesn't exist
+	_setup_position_label()
+
+func _setup_position_label() -> void:
+	lbl_position = Label.new()
+	lbl_position.text = "P1"
+	lbl_position.add_theme_font_size_override("font_size", 24)
+	$HBoxContainer.add_child(lbl_position)
+	$HBoxContainer.move_child(lbl_position, 0)  # Move to front
+
 func set_speed(speed: String) -> void:
 	lbl_speed.text = speed
 
@@ -13,3 +26,21 @@ func set_lap(lap_number: String) -> void:
 
 func set_lap_time(lap_time: String) -> void:
 	lbl_lap_time.text = "Time: " + lap_time
+
+func set_race_position(pos: int, total: int) -> void:
+	if lbl_position:
+		lbl_position.text = "P%d/%d" % [pos, total]
+
+		# Color based on position
+		match pos:
+			1:
+				lbl_position.add_theme_color_override("font_color", Color.GOLD)
+			2:
+				lbl_position.add_theme_color_override("font_color", Color.SILVER)
+			3:
+				lbl_position.add_theme_color_override("font_color", Color(0.8, 0.5, 0.2))
+			_:
+				lbl_position.add_theme_color_override("font_color", Color.WHITE)
+
+func set_total_laps(current: int, total: int) -> void:
+	lbl_lap.text = "Lap: %d/%d" % [current, total]
