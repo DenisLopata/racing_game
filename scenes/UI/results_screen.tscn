@@ -31,7 +31,6 @@ theme_override_constants/separation = 20
 
 [node name="TitleLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 48
 text = "RACE COMPLETE"
 horizontal_alignment = 1
 

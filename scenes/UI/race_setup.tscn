@@ -39,7 +39,6 @@ size_flags_horizontal = 3
 
 [node name="Title" type="Label" parent="Header"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
 text = "RACE SETUP"
 
 [node name="Spacer2" type="Control" parent="Header"]
@@ -212,7 +211,6 @@ layout_mode = 2
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 24
 text = "START RACE"
 
 [connection signal="pressed" from="Header/BackButton" to="." method="_on_back_button_pressed"]

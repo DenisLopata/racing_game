@@ -1,22 +1,21 @@
 class_name Speedometer
 extends Control
 
-@onready var lbl_speed: Label = $HBoxContainer/lblSpeed
-@onready var lbl_lap: Label = $HBoxContainer/lblLap
-@onready var lbl_lap_time: Label = $HBoxContainer/lblLapTime
+@onready var hbox: HBoxContainer = $MarginContainer/HBoxContainer
+@onready var lbl_speed: Label = $MarginContainer/HBoxContainer/lblSpeed
+@onready var lbl_lap: Label = $MarginContainer/HBoxContainer/lblLap
+@onready var lbl_lap_time: Label = $MarginContainer/HBoxContainer/lblLapTime
 
 var lbl_position: Label
 
 func _ready() -> void:
-	# Create position label if it doesn't exist
 	_setup_position_label()
 
 func _setup_position_label() -> void:
 	lbl_position = Label.new()
 	lbl_position.text = "P1"
-	lbl_position.add_theme_font_size_override("font_size", 24)
-	$HBoxContainer.add_child(lbl_position)
-	$HBoxContainer.move_child(lbl_position, 0)  # Move to front
+	hbox.add_child(lbl_position)
+	hbox.move_child(lbl_position, 0)  # Move to front
 
 func set_speed(speed: String) -> void:
 	lbl_speed.text = speed

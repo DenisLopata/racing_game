@@ -108,7 +108,8 @@ func _start_race() -> void:
 	race_started.emit()
 
 ## Called when a car crosses the start/finish line
-func on_car_crossed_line(car: Car) -> void:
+## total_checkpoints: number of checkpoints on track (0 = no validation)
+func on_car_crossed_line(car: Car, total_checkpoints: int = 0) -> void:
 	if state != RaceState.RACING:
 		return
 
@@ -120,7 +121,13 @@ func on_car_crossed_line(car: Car) -> void:
 	if data["finished"]:
 		return
 
-	# Record lap time
+	# VALIDATION: Require checkpoints to be passed (if track has checkpoints)
+	if total_checkpoints > 0:
+		if data["checkpoints_passed"] < total_checkpoints:
+			# Invalid lap - didn't complete the circuit
+			return
+
+	# Record lap time (lap is valid)
 	var current_time = Time.get_ticks_msec() / 1000.0
 	var lap_time = current_time - data["current_lap_start"]
 

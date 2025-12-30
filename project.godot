@@ -32,7 +32,7 @@ window/stretch/scale_mode="integer"
 
 [gui]
 
-theme/custom_font="uid://bdkyrnlh3hsbp"
+theme/custom="res://assets/themes/game_theme.tres"
 
 [rendering]
 
