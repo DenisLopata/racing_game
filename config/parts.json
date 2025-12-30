@@ -1,0 +1,247 @@
+{
+  "engines": {
+    "stock": {
+      "name": "Stock Engine",
+      "description": "Factory standard engine",
+      "tier": 0,
+      "price": 0,
+      "unlock_wins": 0,
+      "acceleration_mult": 1.0,
+      "max_speed_mult": 1.0
+    },
+    "basic": {
+      "name": "Tuned Engine",
+      "description": "Basic performance tuning for better acceleration",
+      "tier": 1,
+      "price": 500,
+      "unlock_wins": 1,
+      "acceleration_mult": 1.1,
+      "max_speed_mult": 1.05
+    },
+    "sport": {
+      "name": "Sport Engine",
+      "description": "Balanced performance upgrade",
+      "tier": 2,
+      "price": 1500,
+      "unlock_wins": 3,
+      "acceleration_mult": 1.15,
+      "max_speed_mult": 1.12
+    },
+    "pro": {
+      "name": "Pro Engine",
+      "description": "High-revving engine optimized for top speed",
+      "tier": 3,
+      "price": 4000,
+      "unlock_wins": 7,
+      "acceleration_mult": 1.1,
+      "max_speed_mult": 1.25
+    },
+    "racing": {
+      "name": "Racing Engine",
+      "description": "Competition-grade powerplant",
+      "tier": 4,
+      "price": 10000,
+      "unlock_wins": 15,
+      "acceleration_mult": 1.25,
+      "max_speed_mult": 1.3
+    }
+  },
+  "tires": {
+    "stock": {
+      "name": "Stock Tires",
+      "description": "Factory all-season tires",
+      "tier": 0,
+      "price": 0,
+      "unlock_wins": 0,
+      "grip_mult": 1.0,
+      "drift_mult": 1.0,
+      "friction_mult": 1.0
+    },
+    "basic": {
+      "name": "Sport Compound",
+      "description": "Better grip, reduced drift capability",
+      "tier": 1,
+      "price": 400,
+      "unlock_wins": 1,
+      "grip_mult": 1.1,
+      "drift_mult": 0.95,
+      "friction_mult": 1.05
+    },
+    "sport": {
+      "name": "Performance Tires",
+      "description": "All-around performance upgrade",
+      "tier": 2,
+      "price": 1200,
+      "unlock_wins": 3,
+      "grip_mult": 1.15,
+      "drift_mult": 1.1,
+      "friction_mult": 1.1
+    },
+    "pro": {
+      "name": "Drift Specials",
+      "description": "Optimized for controlled slides",
+      "tier": 3,
+      "price": 3000,
+      "unlock_wins": 7,
+      "grip_mult": 1.05,
+      "drift_mult": 1.3,
+      "friction_mult": 0.9
+    },
+    "racing": {
+      "name": "Racing Slicks",
+      "description": "Maximum grip, minimal drift",
+      "tier": 4,
+      "price": 8000,
+      "unlock_wins": 15,
+      "grip_mult": 1.25,
+      "drift_mult": 0.85,
+      "friction_mult": 1.2
+    }
+  },
+  "spoilers": {
+    "none": {
+      "name": "No Spoiler",
+      "description": "Stock aerodynamics",
+      "tier": 0,
+      "price": 0,
+      "unlock_wins": 0,
+      "drag_mult": 1.0,
+      "rotation_mult": 1.0
+    },
+    "basic": {
+      "name": "Lip Spoiler",
+      "description": "Subtle downforce improvement",
+      "tier": 1,
+      "price": 300,
+      "unlock_wins": 1,
+      "drag_mult": 1.05,
+      "rotation_mult": 1.05
+    },
+    "sport": {
+      "name": "Sport Wing",
+      "description": "Noticeable cornering improvement",
+      "tier": 2,
+      "price": 900,
+      "unlock_wins": 3,
+      "drag_mult": 1.1,
+      "rotation_mult": 1.1
+    },
+    "pro": {
+      "name": "GT Wing",
+      "description": "High downforce for aggressive cornering",
+      "tier": 3,
+      "price": 2500,
+      "unlock_wins": 7,
+      "drag_mult": 1.2,
+      "rotation_mult": 1.15
+    },
+    "racing": {
+      "name": "Racing Wing",
+      "description": "Optimized aero package",
+      "tier": 4,
+      "price": 6000,
+      "unlock_wins": 15,
+      "drag_mult": 1.15,
+      "rotation_mult": 1.2
+    }
+  },
+  "brakes": {
+    "stock": {
+      "name": "Stock Brakes",
+      "description": "Factory brake system",
+      "tier": 0,
+      "price": 0,
+      "unlock_wins": 0,
+      "brake_mult": 1.0
+    },
+    "basic": {
+      "name": "Sport Pads",
+      "description": "Improved stopping power",
+      "tier": 1,
+      "price": 350,
+      "unlock_wins": 1,
+      "brake_mult": 1.1
+    },
+    "sport": {
+      "name": "Performance Brakes",
+      "description": "Upgraded rotors and calipers",
+      "tier": 2,
+      "price": 1000,
+      "unlock_wins": 3,
+      "brake_mult": 1.2
+    },
+    "pro": {
+      "name": "Big Brake Kit",
+      "description": "Large rotors for consistent stopping",
+      "tier": 3,
+      "price": 2800,
+      "unlock_wins": 7,
+      "brake_mult": 1.35
+    },
+    "racing": {
+      "name": "Carbon Ceramics",
+      "description": "Race-grade braking system",
+      "tier": 4,
+      "price": 7000,
+      "unlock_wins": 15,
+      "brake_mult": 1.5
+    }
+  },
+  "suspensions": {
+    "stock": {
+      "name": "Stock Suspension",
+      "description": "Factory suspension setup",
+      "tier": 0,
+      "price": 0,
+      "unlock_wins": 0,
+      "rotation_mult": 1.0,
+      "lateral_grip_mult": 1.0
+    },
+    "basic": {
+      "name": "Lowered Springs",
+      "description": "Lower center of gravity",
+      "tier": 1,
+      "price": 400,
+      "unlock_wins": 1,
+      "rotation_mult": 1.05,
+      "lateral_grip_mult": 1.05
+    },
+    "sport": {
+      "name": "Sport Coilovers",
+      "description": "Quick response, slightly less stable",
+      "tier": 2,
+      "price": 1300,
+      "unlock_wins": 3,
+      "rotation_mult": 1.1,
+      "lateral_grip_mult": 0.95
+    },
+    "pro": {
+      "name": "Track Suspension",
+      "description": "Stable platform, slower turn-in",
+      "tier": 3,
+      "price": 3500,
+      "unlock_wins": 7,
+      "rotation_mult": 0.95,
+      "lateral_grip_mult": 1.15
+    },
+    "racing": {
+      "name": "Racing Suspension",
+      "description": "Fully adjustable race setup",
+      "tier": 4,
+      "price": 9000,
+      "unlock_wins": 15,
+      "rotation_mult": 1.15,
+      "lateral_grip_mult": 1.1
+    }
+  },
+  "rewards": {
+    "position_rewards": {
+      "1": 500,
+      "2": 300,
+      "3": 200,
+      "4": 100,
+      "default": 50
+    },
+    "completion_bonus": 25
+  }
+}

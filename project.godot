@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 ConfigManager="*res://scripts/config/config_manager.gd"
 RaceManager="*res://scripts/race/race_manager.gd"
 GameSettings="*res://scripts/game_settings.gd"
+PlayerProgress="*res://scripts/progression/player_progress.gd"
 
 [display]
 

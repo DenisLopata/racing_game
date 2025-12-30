@@ -11,6 +11,7 @@ var surfaces: Dictionary = {}
 var weather: Dictionary = {}
 var tracks: Dictionary = {}
 var game: Dictionary = {}
+var parts: Dictionary = {}
 
 const CONFIG_PATH = "res://config/"
 
@@ -25,6 +26,7 @@ func load_all_configs() -> void:
 	weather = _load_json("weather.json")
 	tracks = _load_json("tracks.json")
 	game = _load_json("game.json")
+	parts = _load_json("parts.json")
 
 ## Reload a specific config file
 func reload_config(name: String) -> void:
@@ -41,6 +43,8 @@ func reload_config(name: String) -> void:
 			tracks = _load_json("tracks.json")
 		"game":
 			game = _load_json("game.json")
+		"parts":
+			parts = _load_json("parts.json")
 	config_reloaded.emit(name)
 
 ## Reload all configs (hot-reload)
@@ -185,3 +189,47 @@ func array_to_color(arr: Array) -> Color:
 	elif arr.size() >= 3:
 		return Color(arr[0], arr[1], arr[2])
 	return Color.WHITE
+
+# =============================================================================
+# Parts Config Helpers
+# =============================================================================
+
+## Get all parts in a category (engines, tires, spoilers, brakes, suspensions)
+func get_parts_category(category: String) -> Dictionary:
+	return parts.get(category, {})
+
+## Get a specific part by category and id
+func get_part(category: String, part_id: String) -> Dictionary:
+	return parts.get(category, {}).get(part_id, {})
+
+## Get all engines
+func get_engines() -> Dictionary:
+	return parts.get("engines", {})
+
+## Get all tires
+func get_tires() -> Dictionary:
+	return parts.get("tires", {})
+
+## Get all spoilers
+func get_spoilers() -> Dictionary:
+	return parts.get("spoilers", {})
+
+## Get all brakes
+func get_brakes() -> Dictionary:
+	return parts.get("brakes", {})
+
+## Get all suspensions
+func get_suspensions() -> Dictionary:
+	return parts.get("suspensions", {})
+
+## Get race reward settings
+func get_race_rewards() -> Dictionary:
+	return parts.get("rewards", {})
+
+## Get position rewards mapping
+func get_position_rewards() -> Dictionary:
+	return parts.get("rewards", {}).get("position_rewards", {"1": 500, "2": 300, "3": 200, "4": 100, "default": 50})
+
+## Get all part categories
+func get_part_categories() -> Array:
+	return ["engines", "tires", "spoilers", "brakes", "suspensions"]

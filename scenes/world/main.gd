@@ -98,6 +98,10 @@ func _load_from_config() -> void:
 	car.set_controller(player_controller)
 	player_car = car
 
+	# Enable player upgrades on player car
+	car.use_player_upgrades = true
+	car.refresh_upgrades()
+
 	# Register player car with RaceManager
 	RaceManager.register_car(car)
 
@@ -462,6 +466,11 @@ func _on_pause_resume() -> void:
 func _on_car_finished(finished_car: Car, position: int, total_time: float) -> void:
 	if finished_car == player_car:
 		print("Player finished in position %d with time %.2f" % [position, total_time])
+
+		# Award race rewards
+		var reward = PlayerProgress.complete_race(position)
+		print("Earned %d credits! (Total: %d, Wins: %d)" % [reward, PlayerProgress.currency, PlayerProgress.wins])
+
 		# Force finish race when player finishes (or wait for all)
 		RaceManager.force_finish_race()
 

@@ -45,6 +45,12 @@ var drift_manager: DriftManager
 # Drivetrain modifier cache (loaded from config)
 var drivetrain_modifier: Dictionary = {}
 
+# Part modifiers (from equipped upgrades)
+var part_modifiers: CarModifiers = null
+
+# Whether this car uses player upgrades (only player car)
+var use_player_upgrades: bool = false
+
 # -------------------------
 # Lifecycle
 # -------------------------
@@ -61,6 +67,7 @@ func apply_tuning(mode: String) -> void:
 		push_warning("Unknown tuning mode: %s" % mode)
 		return
 
+	# Load base stats from preset
 	ACCELERATION = preset.get("acceleration", 400.0)
 	MAX_SPEED = preset.get("max_speed", 340.0)
 	FRICTION = preset.get("friction", 300.0)
@@ -71,6 +78,37 @@ func apply_tuning(mode: String) -> void:
 
 	# Load drivetrain modifier
 	drivetrain_modifier = ConfigManager.get_drivetrain_modifier(drive_type)
+
+	# Apply part modifiers (player car only)
+	_apply_part_modifiers()
+
+## Apply part upgrade modifiers to base stats
+func _apply_part_modifiers() -> void:
+	if not use_player_upgrades:
+		part_modifiers = CarModifiers.defaults()
+		return
+
+	# Get modifiers from player's equipped parts
+	if PlayerProgress:
+		part_modifiers = CarModifiers.from_equipped(PlayerProgress.get_all_equipped())
+	else:
+		part_modifiers = CarModifiers.defaults()
+
+	# Apply multipliers to base stats
+	ACCELERATION *= part_modifiers.acceleration_mult
+	MAX_SPEED *= part_modifiers.max_speed_mult
+	BRAKE_FORCE *= part_modifiers.brake_mult
+	ROTATION_SPEED *= part_modifiers.rotation_mult
+	AIR_DRAG_COEFF *= part_modifiers.drag_mult
+	FRICTION *= part_modifiers.friction_mult
+
+	# Apply lateral grip modifier to drivetrain
+	var base_lateral = drivetrain_modifier.get("lateral_grip", 0.2)
+	drivetrain_modifier["lateral_grip"] = base_lateral * part_modifiers.lateral_grip_mult
+
+## Refresh upgrades (call when player equips new parts)
+func refresh_upgrades() -> void:
+	apply_tuning(tuning_mode)
 
 # -------------------------
 # Physics process
