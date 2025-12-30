@@ -6,6 +6,7 @@ const CarScene = preload("res://scenes/entites/car.tscn")
 const RainEffectScene = preload("res://scenes/effects/rain_effect.tscn")
 const FogEffectScene = preload("res://scenes/effects/fog_effect.tscn")
 const PauseMenuScene = preload("res://scenes/UI/pause_menu.tscn")
+const CheckpointScene = preload("res://scenes/world/checkpoint.tscn")
 
 ## Number of AI opponents
 @export var num_ai_opponents: int = 7
@@ -33,6 +34,9 @@ var track_analyzer: TrackAnalyzer
 var line_generator: RacingLineGenerator
 var debug_drawer: PathDebugDrawer
 var difficulty_paths: Dictionary = {}  # "easy" -> WaypointPath, etc.
+
+## Checkpoint system for lap validation
+var checkpoint_system: CheckpointSystem
 
 ## Camera zoom settings (loaded from config)
 var camera: Camera2D
@@ -99,6 +103,9 @@ func _load_from_config() -> void:
 
 	# Analyze track and generate racing lines for AI
 	_analyze_track_and_generate_paths()
+
+	# Create checkpoint system for lap validation
+	_setup_checkpoint_system()
 
 	# Spawn AI opponents
 	_spawn_ai_cars()
@@ -208,6 +215,91 @@ func _create_waypoint_path_from_points(points: PackedVector2Array, path_name: St
 	if speed_hints.size() > 0:
 		path.speed_hints = speed_hints
 	return path
+
+## Setup checkpoint system with checkpoints placed around the track
+func _setup_checkpoint_system() -> void:
+	# Create checkpoint system
+	checkpoint_system = CheckpointSystem.new()
+	checkpoint_system.name = "CheckpointSystem"
+	add_child(checkpoint_system)
+
+	# Get racing line points to determine checkpoint positions
+	var racing_line = line_generator.center_line if line_generator else PackedVector2Array()
+	if racing_line.size() < 4:
+		return
+
+	# Get boundaries to calculate track width at each point
+	var outer_boundary = track_analyzer.tiles_to_world(track_analyzer.get_outer_boundary())
+	var inner_boundary = track_analyzer.tiles_to_world(track_analyzer.get_inner_boundary())
+
+	# Place 3 checkpoints at 25%, 50%, 75% of the track
+	var num_checkpoints = 3
+	for i in num_checkpoints:
+		var progress = float(i + 1) / float(num_checkpoints + 1)
+		var point_index = int(progress * racing_line.size())
+		var checkpoint_pos = racing_line[point_index]
+
+		# Calculate track width at this position using boundaries
+		var track_width = _get_track_width_at_index(point_index, outer_boundary, inner_boundary)
+
+		# Get direction for rotation (perpendicular to track)
+		var next_index = (point_index + 1) % racing_line.size()
+		var direction = (racing_line[next_index] - checkpoint_pos).normalized()
+		var rotation = direction.angle()
+
+		_create_checkpoint(i, checkpoint_pos, track_width, rotation)
+
+	# Connect checkpoint system to start line
+	var start_line = $StartLine
+	if start_line and start_line.has_method("set"):
+		start_line.checkpoint_system = checkpoint_system
+
+## Get the track width at a specific index along the racing line
+func _get_track_width_at_index(index: int, outer: PackedVector2Array, inner: PackedVector2Array) -> float:
+	if outer.size() == 0 or inner.size() == 0:
+		return 300.0  # Default fallback
+
+	# Map racing line index to boundary index (they have same sample count)
+	var boundary_index = index % outer.size()
+	var outer_point = outer[boundary_index]
+	var inner_point = inner[boundary_index]
+
+	# Calculate width with some padding
+	return outer_point.distance_to(inner_point) + 50.0
+
+## Create a single checkpoint at the given position
+func _create_checkpoint(index: int, position: Vector2, width: float = 200.0, rotation_angle: float = 0.0) -> void:
+	var checkpoint = Checkpoint.new()
+	checkpoint.name = "Checkpoint_%d" % index
+	checkpoint.checkpoint_index = index
+	checkpoint.position = position
+	checkpoint.rotation = rotation_angle + PI / 2  # Perpendicular to track direction
+
+	# Create collision shape spanning the track width
+	var collision = CollisionShape2D.new()
+	var shape = RectangleShape2D.new()
+	shape.size = Vector2(width, 40)
+	collision.shape = shape
+	checkpoint.add_child(collision)
+
+	# Add debug visualization
+	var debug_rect = ColorRect.new()
+	debug_rect.size = Vector2(width, 40)
+	debug_rect.position = Vector2(-width / 2, -20)  # Center the rect
+	debug_rect.color = Color(1.0, 0.5, 0.0, 0.5)  # Orange semi-transparent
+	checkpoint.add_child(debug_rect)
+
+	# Add label showing checkpoint number
+	var label = Label.new()
+	label.text = "CP %d" % index
+	label.position = Vector2(-20, -50)
+	label.rotation = -checkpoint.rotation  # Counter-rotate so text stays upright
+	label.add_theme_color_override("font_color", Color.WHITE)
+	checkpoint.add_child(label)
+
+	# Add to checkpoint system
+	checkpoint_system.add_child(checkpoint)
+	checkpoint_system.add_checkpoint(checkpoint)
 
 func _spawn_ai_cars() -> void:
 	for i in num_ai_opponents:
