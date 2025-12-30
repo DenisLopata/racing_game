@@ -1,0 +1,51 @@
+{
+  "defaults": {
+    "lap_count": 3,
+    "opponent_count": 7,
+    "ai_difficulty": "medium",
+    "weather": "clear",
+    "tuning_mode": "hybrid"
+  },
+  "audio": {
+    "master_volume": 1.0,
+    "music_volume": 0.8,
+    "sfx_volume": 1.0
+  },
+  "camera": {
+    "zoom_min": 0.2,
+    "zoom_max": 2.0,
+    "zoom_speed": 0.1
+  },
+  "visuals": {
+    "tire_marks_width": 2,
+    "tire_marks_color": [0, 0, 0, 0.3],
+    "tire_marks_max_points": 100,
+    "skid_marks_width": 10,
+    "skid_marks_color": [0, 0, 0, 0.6],
+    "skid_marks_alpha": 0.2,
+    "drift_particle_threshold": 60,
+    "drift_particle_amount_base": 20,
+    "drift_particle_amount_scale": 80,
+    "tire_marks_threshold": 100
+  },
+  "ai_colors": [
+    [1, 0.3, 0.3],
+    [0.3, 0.3, 1],
+    [0.3, 1, 0.3],
+    [1, 1, 0.3],
+    [1, 0.3, 1],
+    [0.3, 1, 1],
+    [1, 0.6, 0.3]
+  ],
+  "drift": {
+    "smoothing": 5.0,
+    "decay_speed": 2.0,
+    "max_ratio": 1.5,
+    "min_speed": 100.0,
+    "steering_influence": 5.0
+  },
+  "race": {
+    "countdown_seconds": 3,
+    "countdown_delay": 0.5
+  }
+}

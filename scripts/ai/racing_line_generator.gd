@@ -11,6 +11,12 @@ var racing_line: PackedVector2Array     # Hard - between center and inner
 var center_line: PackedVector2Array     # Medium - middle of road
 var wide_line: PackedVector2Array       # Easy - near outer edge
 
+# Speed hints for each line (0.0 = slow corner, 1.0 = full speed straight)
+var optimal_speed_hints: Array[float] = []
+var racing_speed_hints: Array[float] = []
+var center_speed_hints: Array[float] = []
+var wide_speed_hints: Array[float] = []
+
 # Boundary lines for reference
 var outer_boundary_line: PackedVector2Array
 var inner_boundary_line: PackedVector2Array
@@ -51,6 +57,12 @@ func generate(analyzer: TrackAnalyzer, tilemap: TileMapLayer) -> void:
 	center_line = _smooth_path(center_line, 2)
 	racing_line = _smooth_path(racing_line, 2)
 	optimal_line = _smooth_path(optimal_line, 2)
+
+	# Generate speed hints based on curvature for each line
+	wide_speed_hints = _generate_speed_hints(wide_line)
+	center_speed_hints = _generate_speed_hints(center_line)
+	racing_speed_hints = _generate_speed_hints(racing_line)
+	optimal_speed_hints = _generate_speed_hints(optimal_line)
 
 ## Interpolate between outer and inner boundaries
 ## factor = 0.0 means outer boundary, factor = 1.0 means inner boundary
@@ -107,3 +119,65 @@ func get_all_lines() -> Dictionary:
 		"outer_boundary": outer_boundary_line,
 		"inner_boundary": inner_boundary_line
 	}
+
+## Get speed hints for a specific difficulty
+func get_speed_hints_for_difficulty(difficulty: String) -> Array[float]:
+	match difficulty:
+		"expert":
+			return optimal_speed_hints
+		"hard":
+			return racing_speed_hints
+		"medium":
+			return center_speed_hints
+		"easy":
+			return wide_speed_hints
+	return center_speed_hints
+
+## Generate speed hints based on path curvature
+## Returns array of floats (0.0 = sharp corner, 1.0 = straight)
+func _generate_speed_hints(path: PackedVector2Array) -> Array[float]:
+	var hints: Array[float] = []
+	if path.size() < 3:
+		for i in path.size():
+			hints.append(1.0)
+		return hints
+
+	# Calculate curvature at each point
+	var curvatures: Array[float] = []
+	for i in path.size():
+		var prev_idx = (i - 1 + path.size()) % path.size()
+		var next_idx = (i + 1) % path.size()
+
+		var prev_pt = path[prev_idx]
+		var curr_pt = path[i]
+		var next_pt = path[next_idx]
+
+		# Direction vectors
+		var dir1 = (curr_pt - prev_pt).normalized()
+		var dir2 = (next_pt - curr_pt).normalized()
+
+		# Curvature is how much direction changes (0 = straight, PI = U-turn)
+		var angle_change = abs(dir1.angle_to(dir2))
+		curvatures.append(angle_change)
+
+	# Smooth curvatures (look at surrounding points too)
+	var smoothed_curvatures: Array[float] = []
+	var smooth_window = 3
+	for i in curvatures.size():
+		var sum = 0.0
+		var count = 0
+		for offset in range(-smooth_window, smooth_window + 1):
+			var idx = (i + offset + curvatures.size()) % curvatures.size()
+			sum += curvatures[idx]
+			count += 1
+		smoothed_curvatures.append(sum / count)
+
+	# Convert curvature to speed hints
+	# Higher curvature = lower speed hint
+	var max_curvature = 0.3  # Above this angle is considered a sharp turn
+	for curvature in smoothed_curvatures:
+		# Map curvature to speed hint (inverted)
+		var speed_hint = 1.0 - clamp(curvature / max_curvature, 0.0, 0.7)
+		hints.append(speed_hint)
+
+	return hints

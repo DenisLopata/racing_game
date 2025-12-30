@@ -272,7 +272,7 @@ func get_car_lap_data(car_id: int) -> Dictionary:
 		return car_data[car_id]
 	return {}
 
-## Reset race to pre-race state
+## Reset race to pre-race state (keeps registered cars)
 func reset_race() -> void:
 	state = RaceState.PRE_RACE
 	race_start_time = 0.0
@@ -289,6 +289,16 @@ func reset_race() -> void:
 		car_data[car_id]["last_checkpoint"] = -1
 
 	race_state_changed.emit(state)
+
+## Full reset for scene reload - clears all state
+func full_reset() -> void:
+	state = RaceState.PRE_RACE
+	race_start_time = 0.0
+	countdown_timer.stop()
+	current_countdown = 0
+	registered_cars.clear()
+	car_data.clear()
+	next_car_id = 0
 
 ## Check if race is active
 func is_racing() -> bool:

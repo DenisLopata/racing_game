@@ -1,0 +1,14 @@
+{
+  "clear": {
+    "grip_modifier": 1.0,
+    "visual_effect": null
+  },
+  "rain": {
+    "grip_modifier": 0.7,
+    "visual_effect": "rain_effect"
+  },
+  "fog": {
+    "grip_modifier": 0.9,
+    "visual_effect": "fog_effect"
+  }
+}

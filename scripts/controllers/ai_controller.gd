@@ -16,6 +16,7 @@ var path_adherence: float = 0.9          # How closely to follow the racing line
 var reaction_delay: float = 0.1          # Delay before reacting to changes
 var mistake_chance: float = 0.02         # Chance per frame of making a mistake
 var corner_brake_distance: float = 100.0 # How early to brake for corners
+var throttle_smoothness: float = 0.8     # How optimal throttle is (1.0 = perfect, lower = more like player)
 
 ## Internal state
 var target_steer: float = 0.0
@@ -33,16 +34,34 @@ var unstuck_timer: float = 0.0
 var last_position: Vector2 = Vector2.ZERO
 var position_check_timer: float = 0.0
 
-const STUCK_SPEED_THRESHOLD: float = 30.0  # Consider stuck if below this speed
-const STUCK_TIME_THRESHOLD: float = 0.4    # Time before considering stuck
-const UNSTUCK_BRAKE_TIME: float = 0.3      # Time to brake before reversing
-const UNSTUCK_REVERSE_TIME: float = 0.8    # Time to reverse
-const UNSTUCK_FORWARD_TIME: float = 0.5    # Time to go forward with steering
-const AVOIDANCE_STEER_STRENGTH: float = 1.0
+## AI constants (loaded from config)
+var STUCK_SPEED_THRESHOLD: float = 20.0
+var STUCK_TIME_THRESHOLD: float = 0.8
+var UNSTUCK_BRAKE_TIME: float = 0.2
+var UNSTUCK_REVERSE_TIME: float = 0.4
+var UNSTUCK_FORWARD_TIME: float = 0.3
+var AVOIDANCE_STEER_STRENGTH: float = 0.5
+var MIN_LOOKAHEAD: float = 50.0
+var MAX_LOOKAHEAD: float = 200.0
 
-## Minimum lookahead distance
-const MIN_LOOKAHEAD: float = 50.0
-const MAX_LOOKAHEAD: float = 200.0
+## Collision avoidance constants (loaded from config)
+var AVOIDANCE_DISTANCE: float = 80.0
+var AVOIDANCE_SIDE_DISTANCE: float = 40.0
+var AVOIDANCE_SLOWDOWN_DISTANCE: float = 60.0
+
+func _load_constants() -> void:
+	var constants = ConfigManager.get_ai_constants()
+	STUCK_SPEED_THRESHOLD = constants.get("stuck_speed_threshold", 20.0)
+	STUCK_TIME_THRESHOLD = constants.get("stuck_time_threshold", 0.8)
+	UNSTUCK_BRAKE_TIME = constants.get("unstuck_brake_time", 0.2)
+	UNSTUCK_REVERSE_TIME = constants.get("unstuck_reverse_time", 0.4)
+	UNSTUCK_FORWARD_TIME = constants.get("unstuck_forward_time", 0.3)
+	AVOIDANCE_STEER_STRENGTH = constants.get("avoidance_steer_strength", 0.5)
+	MIN_LOOKAHEAD = constants.get("min_lookahead", 50.0)
+	MAX_LOOKAHEAD = constants.get("max_lookahead", 200.0)
+	AVOIDANCE_DISTANCE = constants.get("avoidance_distance", 80.0)
+	AVOIDANCE_SIDE_DISTANCE = constants.get("avoidance_side_distance", 40.0)
+	AVOIDANCE_SLOWDOWN_DISTANCE = constants.get("avoidance_slowdown_distance", 60.0)
 
 func get_input() -> InputState:
 	var state = InputState.new()
@@ -93,7 +112,12 @@ func get_input() -> InputState:
 	if is_making_mistake:
 		target_steer += mistake_steer_offset
 
-	# Apply avoidance steering if stuck
+	# Proactive collision avoidance - steer away from nearby cars
+	var nearby_cars = _get_nearby_cars()
+	var avoidance = _calculate_avoidance_steering(nearby_cars)
+	target_steer += avoidance
+
+	# Apply avoidance steering if stuck (fallback)
 	if stuck_timer > STUCK_TIME_THRESHOLD * 0.5:
 		# Start steering to avoid obstacle before fully stuck
 		target_steer += stuck_steer_direction * AVOIDANCE_STEER_STRENGTH
@@ -111,20 +135,34 @@ func get_input() -> InputState:
 	if distance_to_corner < corner_brake_distance and car_speed > target_speed * 0.7:
 		# Approaching corner - brake
 		state.brake = clamp((corner_brake_distance - distance_to_corner) / corner_brake_distance, 0.0, 0.8)
-		state.throttle = 0.2  # Light throttle through corner
+		state.throttle = 0.1 * throttle_smoothness  # Less throttle through corner
 	elif car_speed < target_speed:
 		# Under target speed - accelerate
-		state.throttle = clamp((target_speed - car_speed) / 100.0, 0.5, 1.0)
+		# More player-like: binary throttle with some variation
+		var speed_diff_ratio = (target_speed - car_speed) / target_speed
+		if speed_diff_ratio > (1.0 - throttle_smoothness) * 0.5:
+			# Need more speed - full throttle (like player holding gas)
+			state.throttle = 0.9 + randf() * 0.1
+		else:
+			# Close to target - partial throttle with variation
+			state.throttle = clamp(speed_diff_ratio * 2.0 + randf() * 0.2, 0.3, 0.8) * throttle_smoothness
 		state.brake = 0.0
 	else:
-		# At or over target speed - coast or light brake
-		state.throttle = 0.3
-		state.brake = 0.0 if car_speed < target_speed * 1.1 else 0.2
+		# At or over target speed - coast or light brake (less optimal than before)
+		state.throttle = 0.1 + randf() * 0.2
+		state.brake = 0.0 if car_speed < target_speed * 1.05 else 0.3
 
-	# Avoid going too slow
-	if car_speed < 50:
-		state.throttle = 1.0
+	# Avoid going too slow - but with slight delay like player reaction
+	if car_speed < 40:
+		state.throttle = 0.85 + randf() * 0.15
 		state.brake = 0.0
+
+	# Slow down when very close to other cars to reduce bumping
+	if not nearby_cars.is_empty():
+		var closest_dist = nearby_cars[0]["distance"]
+		if closest_dist < AVOIDANCE_SLOWDOWN_DISTANCE:
+			var slowdown_factor = 0.5 + 0.5 * (closest_dist / AVOIDANCE_SLOWDOWN_DISTANCE)
+			state.throttle *= slowdown_factor
 
 	return state
 
@@ -219,39 +257,26 @@ func _update_mistakes() -> void:
 			mistake_timer = randf_range(0.1, 0.3)
 			mistake_steer_offset = randf_range(-0.3, 0.3)
 
-## Set difficulty preset
+## Set difficulty preset from ConfigManager
 func set_difficulty(difficulty: String) -> void:
 	current_difficulty = difficulty
 
-	match difficulty:
-		"easy":
-			max_speed_percent = 0.70
-			lookahead_factor = 0.25
-			path_adherence = 0.7
-			reaction_delay = 0.2
-			mistake_chance = 0.05
-			corner_brake_distance = 150.0
-		"medium":
-			max_speed_percent = 0.85
-			lookahead_factor = 0.3
-			path_adherence = 0.85
-			reaction_delay = 0.1
-			mistake_chance = 0.02
-			corner_brake_distance = 100.0
-		"hard":
-			max_speed_percent = 0.95
-			lookahead_factor = 0.35
-			path_adherence = 0.95
-			reaction_delay = 0.05
-			mistake_chance = 0.005
-			corner_brake_distance = 80.0
-		"expert":
-			max_speed_percent = 1.0
-			lookahead_factor = 0.4
-			path_adherence = 1.0
-			reaction_delay = 0.02
-			mistake_chance = 0.0
-			corner_brake_distance = 60.0
+	# Load constants first
+	_load_constants()
+
+	# Load difficulty settings from config
+	var settings = ConfigManager.get_ai_difficulty_settings(difficulty)
+	if settings.is_empty():
+		push_warning("Unknown AI difficulty: %s, using medium" % difficulty)
+		settings = ConfigManager.get_ai_difficulty_settings("medium")
+
+	max_speed_percent = settings.get("max_speed_percent", 0.75)
+	lookahead_factor = settings.get("lookahead_factor", 0.3)
+	path_adherence = settings.get("path_adherence", 0.85)
+	reaction_delay = settings.get("reaction_delay", 0.1)
+	mistake_chance = settings.get("mistake_chance", 0.03)
+	corner_brake_distance = settings.get("corner_brake_distance", 100.0)
+	throttle_smoothness = settings.get("throttle_smoothness", 0.65)
 
 	# Select the appropriate path for this difficulty
 	if difficulty in difficulty_paths:
@@ -267,3 +292,50 @@ func set_difficulty_paths(paths: Dictionary) -> void:
 ## Set the waypoint path for this AI to follow
 func set_waypoint_path(path: WaypointPath) -> void:
 	waypoint_path = path
+
+## Get nearby cars for collision avoidance
+func _get_nearby_cars() -> Array:
+	var nearby = []
+	if car == null:
+		return nearby
+	var my_pos = car.global_position
+	for other_car in RaceManager.registered_cars:
+		if other_car == car:
+			continue
+		var dist = my_pos.distance_to(other_car.global_position)
+		if dist < AVOIDANCE_DISTANCE:
+			nearby.append({"car": other_car, "distance": dist})
+	# Sort by distance (closest first)
+	nearby.sort_custom(func(a, b): return a["distance"] < b["distance"])
+	return nearby
+
+## Calculate steering adjustment to avoid nearby cars
+func _calculate_avoidance_steering(nearby_cars: Array) -> float:
+	if nearby_cars.is_empty():
+		return 0.0
+
+	var car_forward = Vector2.UP.rotated(car.rotation)
+	var car_right = car_forward.rotated(PI / 2)
+	var avoidance_steer = 0.0
+
+	for nearby in nearby_cars:
+		var other = nearby["car"]
+		var to_other = other.global_position - car.global_position
+		var forward_dot = to_other.normalized().dot(car_forward)
+		var right_dot = to_other.normalized().dot(car_right)
+
+		# Only avoid cars ahead or beside (not behind)
+		if forward_dot < -0.2:
+			continue
+
+		var dist = nearby["distance"]
+		var influence = 1.0 - (dist / AVOIDANCE_DISTANCE)
+
+		# Steer away from car (opposite of right_dot)
+		if abs(right_dot) > 0.1:
+			avoidance_steer -= sign(right_dot) * influence * 0.5
+		elif forward_dot > 0.5:
+			# Car directly ahead - pick a side based on racing line
+			avoidance_steer += 0.3 * influence
+
+	return clamp(avoidance_steer, -0.6, 0.6)

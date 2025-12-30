@@ -5,6 +5,7 @@ const ResultsScreenScene = preload("res://scenes/UI/results_screen.tscn")
 const CarScene = preload("res://scenes/entites/car.tscn")
 const RainEffectScene = preload("res://scenes/effects/rain_effect.tscn")
 const FogEffectScene = preload("res://scenes/effects/fog_effect.tscn")
+const PauseMenuScene = preload("res://scenes/UI/pause_menu.tscn")
 
 ## Number of AI opponents
 @export var num_ai_opponents: int = 7
@@ -23,6 +24,7 @@ const FogEffectScene = preload("res://scenes/effects/fog_effect.tscn")
 
 var countdown_overlay: CountdownOverlay
 var results_screen: ResultsScreen
+var pause_menu: CanvasLayer
 var player_car: Car
 var ai_cars: Array[Car] = []
 
@@ -32,23 +34,15 @@ var line_generator: RacingLineGenerator
 var debug_drawer: PathDebugDrawer
 var difficulty_paths: Dictionary = {}  # "easy" -> WaypointPath, etc.
 
-## Camera zoom settings (for debug)
+## Camera zoom settings (loaded from config)
 var camera: Camera2D
 var zoom_level: float = 1.0
-const ZOOM_MIN: float = 0.2   # Zoomed out (see whole track)
-const ZOOM_MAX: float = 2.0   # Zoomed in
-const ZOOM_SPEED: float = 0.1
+var ZOOM_MIN: float = 0.2
+var ZOOM_MAX: float = 2.0
+var ZOOM_SPEED: float = 0.1
 
-## AI car colors for visual distinction
-var ai_colors: Array[Color] = [
-	Color(1, 0.3, 0.3),    # Red
-	Color(0.3, 0.3, 1),    # Blue
-	Color(0.3, 1, 0.3),    # Green
-	Color(1, 1, 0.3),      # Yellow
-	Color(1, 0.3, 1),      # Magenta
-	Color(0.3, 1, 1),      # Cyan
-	Color(1, 0.6, 0.3),    # Orange
-]
+## AI car colors (loaded from config)
+var ai_colors: Array[Color] = []
 
 ## Weather grip modifier
 var weather_grip_modifier: float = 1.0
@@ -57,8 +51,35 @@ var weather_grip_modifier: float = 1.0
 var selected_ai_difficulty: String = "medium"
 
 func _ready() -> void:
+	# Reset RaceManager state (important for scene reload)
+	RaceManager.full_reset()
+
+	# Load configuration
+	_load_from_config()
+
 	# Load settings from GameSettings (if available)
 	_apply_game_settings()
+
+func _load_from_config() -> void:
+	# Load camera settings
+	var cam_config = ConfigManager.get_camera_settings()
+	ZOOM_MIN = cam_config.get("zoom_min", 0.2)
+	ZOOM_MAX = cam_config.get("zoom_max", 2.0)
+	ZOOM_SPEED = cam_config.get("zoom_speed", 0.1)
+
+	# Load AI colors
+	ai_colors.clear()
+	for color_arr in ConfigManager.get_ai_colors():
+		ai_colors.append(ConfigManager.array_to_color(color_arr))
+
+	# Load grid settings from current track
+	var track_id = GameSettings.selected_track if has_node("/root/GameSettings") else "sunset_circuit"
+	var track_config = ConfigManager.get_track(track_id)
+	if not track_config.is_empty():
+		var grid_pos = track_config.get("grid_start_position", [295, 400])
+		grid_start_position = Vector2(grid_pos[0], grid_pos[1])
+		grid_row_spacing = track_config.get("grid_row_spacing", 40.0)
+		grid_column_offset = track_config.get("grid_column_offset", 30.0)
 
 	car.tire_marks = tire_marks_line_2d
 	car.surface_manager = surface_manager
@@ -136,6 +157,13 @@ func _setup_race_ui() -> void:
 	results_screen.quit_requested.connect(_on_quit_requested)
 	add_child(results_screen)
 
+	# Create pause menu
+	pause_menu = PauseMenuScene.instantiate()
+	pause_menu.resume_requested.connect(_on_pause_resume)
+	pause_menu.restart_requested.connect(_on_restart_requested)
+	pause_menu.quit_requested.connect(_on_quit_requested)
+	add_child(pause_menu)
+
 	# Connect signals
 	car.drift_marks_finished.connect(_on_car_drift_marks_finished)
 	car.update_speed.connect(_on_car_update_speed)
@@ -156,12 +184,12 @@ func _analyze_track_and_generate_paths() -> void:
 	line_generator = RacingLineGenerator.new()
 	line_generator.generate(track_analyzer, tile_map_layer)
 
-	# 3. Convert generated lines to WaypointPaths
+	# 3. Convert generated lines to WaypointPaths (with speed hints for corner braking)
 	difficulty_paths = {
-		"expert": _create_waypoint_path_from_points(line_generator.optimal_line, "ExpertPath"),
-		"hard": _create_waypoint_path_from_points(line_generator.racing_line, "HardPath"),
-		"medium": _create_waypoint_path_from_points(line_generator.center_line, "MediumPath"),
-		"easy": _create_waypoint_path_from_points(line_generator.wide_line, "EasyPath")
+		"expert": _create_waypoint_path_from_points(line_generator.optimal_line, "ExpertPath", line_generator.optimal_speed_hints),
+		"hard": _create_waypoint_path_from_points(line_generator.racing_line, "HardPath", line_generator.racing_speed_hints),
+		"medium": _create_waypoint_path_from_points(line_generator.center_line, "MediumPath", line_generator.center_speed_hints),
+		"easy": _create_waypoint_path_from_points(line_generator.wide_line, "EasyPath", line_generator.wide_speed_hints)
 	}
 
 	# 4. Create debug drawer to visualize all lines
@@ -170,12 +198,15 @@ func _analyze_track_and_generate_paths() -> void:
 	add_child(debug_drawer)
 	debug_drawer.setup(line_generator)
 
-func _create_waypoint_path_from_points(points: PackedVector2Array, path_name: String) -> WaypointPath:
+func _create_waypoint_path_from_points(points: PackedVector2Array, path_name: String, speed_hints: Array[float] = []) -> WaypointPath:
 	var path = WaypointPath.new()
 	path.name = path_name
 	add_child(path)
 	path.create_from_points(points, true)
 	path.is_closed_loop = true
+	# Apply speed hints for corner braking
+	if speed_hints.size() > 0:
+		path.speed_hints = speed_hints
 	return path
 
 func _spawn_ai_cars() -> void:
@@ -191,7 +222,7 @@ func _spawn_ai_cars() -> void:
 			row * grid_row_spacing
 		)
 		ai_car.global_position = grid_pos
-		ai_car.rotation = -PI / 2  # Face the same direction as start
+		ai_car.rotation = car.rotation  # Face the same direction as player
 
 		# Set a random drivetrain
 		var drivetrains = ["FWD", "RWD", "AWD"]
@@ -230,6 +261,11 @@ func _create_tire_marks_for_ai() -> Line2D:
 	return tire_marks
 
 func _input(event: InputEvent) -> void:
+	# Pause menu toggle (ESC key)
+	if event.is_action_pressed("ui_cancel"):
+		_toggle_pause()
+		return
+
 	# Mouse scroll zoom (for debug)
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -260,6 +296,12 @@ func _input(event: InputEvent) -> void:
 				# Print debug legend
 				if debug_drawer:
 					print(debug_drawer.get_legend())
+			KEY_F5:
+				# Hot-reload all configs
+				ConfigManager.reload_all()
+				_load_from_config()
+				if surface_manager:
+					surface_manager.reload_from_config()
 
 func _process(_delta: float) -> void:
 	# Update position display during race
@@ -310,6 +352,20 @@ func _on_restart_requested() -> void:
 
 func _on_quit_requested() -> void:
 	get_tree().change_scene_to_file("res://scenes/UI/main_menu.tscn")
+
+func _toggle_pause() -> void:
+	# Don't pause during countdown or after race finished
+	if not RaceManager.is_racing():
+		return
+
+	if get_tree().paused:
+		pause_menu.hide_pause()
+	else:
+		pause_menu.show_pause()
+
+func _on_pause_resume() -> void:
+	# Called when resume button is pressed (pause already hidden by pause_menu)
+	pass
 
 func _on_car_finished(finished_car: Car, position: int, total_time: float) -> void:
 	if finished_car == player_car:

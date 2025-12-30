@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+ConfigManager="*res://scripts/config/config_manager.gd"
 RaceManager="*res://scripts/race/race_manager.gd"
 GameSettings="*res://scripts/game_settings.gd"
 

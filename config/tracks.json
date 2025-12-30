@@ -1,0 +1,26 @@
+{
+  "sunset_circuit": {
+	"name": "Sunset Circuit",
+	"scene": "res://scenes/world/main.tscn",
+	"locked": false,
+	"grid_start_position": [295, 400],
+	"grid_row_spacing": 40.0,
+	"grid_column_offset": 30.0
+  },
+  "mountain_pass": {
+	"name": "Mountain Pass",
+	"scene": "res://scenes/world/mountain_pass.tscn",
+	"locked": false,
+	"grid_start_position": [300, 400],
+	"grid_row_spacing": 40.0,
+	"grid_column_offset": 30.0
+  },
+  "night_city": {
+	"name": "Night City",
+	"scene": "",
+	"locked": true,
+	"grid_start_position": [300, 400],
+	"grid_row_spacing": 40.0,
+	"grid_column_offset": 30.0
+  }
+}

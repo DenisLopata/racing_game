@@ -1,0 +1,44 @@
+{
+  "presets": {
+    "arcade": {
+      "acceleration": 500.0,
+      "max_speed": 380.0,
+      "friction": 200.0,
+      "brake_force": 800.0,
+      "rotation_speed": 3.2,
+      "air_drag_coeff": 0.0004,
+      "drift_threshold": 70.0
+    },
+    "realistic": {
+      "acceleration": 300.0,
+      "max_speed": 300.0,
+      "friction": 400.0,
+      "brake_force": 500.0,
+      "rotation_speed": 2.2,
+      "air_drag_coeff": 0.0008,
+      "drift_threshold": 120.0
+    },
+    "hybrid": {
+      "acceleration": 400.0,
+      "max_speed": 340.0,
+      "friction": 300.0,
+      "brake_force": 600.0,
+      "rotation_speed": 2.6,
+      "air_drag_coeff": 0.0006,
+      "drift_threshold": 100.0
+    }
+  },
+  "drivetrain_modifiers": {
+    "FWD": { "steering_mult": 1.0, "lateral_grip": 0.4 },
+    "RWD": { "steering_mult": 1.2, "lateral_grip": 0.05 },
+    "AWD": { "steering_mult": 0.8, "lateral_grip": 0.2 }
+  },
+  "physics": {
+    "reverse_acceleration_mult": 0.6,
+    "steering_speed_factor": 0.7,
+    "steering_min_strength": 0.2,
+    "steering_max_strength": 1.0,
+    "lateral_grip_clamp_min": 0.3,
+    "lateral_grip_clamp_max": 1.0
+  }
+}

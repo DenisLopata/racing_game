@@ -8,9 +8,22 @@ var max_ratio: float = 1.5   # How much lateral vs forward ratio counts as "full
 var current_drift: float = 0.0
 var surface_drift_multiplier: float = 1.0
 
-
 var drift_min_speed: float = 100.0
 var steering_influence: float = 5.0
+
+func _ready() -> void:
+	_load_from_config()
+
+func _load_from_config() -> void:
+	var drift_config = ConfigManager.get_drift_settings()
+	smoothing = drift_config.get("smoothing", 5.0)
+	decay_speed = drift_config.get("decay_speed", 2.0)
+	max_ratio = drift_config.get("max_ratio", 1.5)
+	drift_min_speed = drift_config.get("min_speed", 100.0)
+	steering_influence = drift_config.get("steering_influence", 5.0)
+
+func reload_from_config() -> void:
+	_load_from_config()
 
 func update_drift(delta: float, velocity: Vector2, forward_dir: Vector2, steering: float) -> float:
 	var speed = velocity.length()

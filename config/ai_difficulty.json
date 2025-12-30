@@ -1,0 +1,51 @@
+{
+  "easy": {
+    "max_speed_percent": 0.52,
+    "lookahead_factor": 0.2,
+    "path_adherence": 0.6,
+    "reaction_delay": 0.25,
+    "mistake_chance": 0.10,
+    "corner_brake_distance": 180.0,
+    "throttle_smoothness": 0.4
+  },
+  "medium": {
+    "max_speed_percent": 0.62,
+    "lookahead_factor": 0.25,
+    "path_adherence": 0.75,
+    "reaction_delay": 0.15,
+    "mistake_chance": 0.06,
+    "corner_brake_distance": 130.0,
+    "throttle_smoothness": 0.55
+  },
+  "hard": {
+    "max_speed_percent": 0.72,
+    "lookahead_factor": 0.3,
+    "path_adherence": 0.85,
+    "reaction_delay": 0.08,
+    "mistake_chance": 0.03,
+    "corner_brake_distance": 100.0,
+    "throttle_smoothness": 0.7
+  },
+  "expert": {
+    "max_speed_percent": 0.82,
+    "lookahead_factor": 0.35,
+    "path_adherence": 0.95,
+    "reaction_delay": 0.04,
+    "mistake_chance": 0.01,
+    "corner_brake_distance": 75.0,
+    "throttle_smoothness": 0.8
+  },
+  "constants": {
+    "stuck_speed_threshold": 20.0,
+    "stuck_time_threshold": 0.8,
+    "unstuck_brake_time": 0.2,
+    "unstuck_reverse_time": 0.4,
+    "unstuck_forward_time": 0.3,
+    "avoidance_steer_strength": 0.5,
+    "avoidance_distance": 80.0,
+    "avoidance_side_distance": 40.0,
+    "avoidance_slowdown_distance": 60.0,
+    "min_lookahead": 50.0,
+    "max_lookahead": 200.0
+  }
+}

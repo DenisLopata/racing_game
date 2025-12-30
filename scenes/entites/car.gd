@@ -42,38 +42,8 @@ var tire_marks: Line2D
 var surface_manager: SurfaceManager
 var drift_manager: DriftManager
 
-# -------------------------
-# Tuning presets
-# -------------------------
-const TUNING_PRESETS := {
-	"arcade": {
-		"ACCELERATION": 500.0,
-		"MAX_SPEED": 380.0,
-		"FRICTION": 200.0,
-		"BRAKE_FORCE": 800.0,
-		"ROTATION_SPEED": 3.2,
-		"AIR_DRAG_COEFF": 0.0004,
-		"DRIFT_THRESHOLD": 70.0,
-	},
-	"realistic": {
-		"ACCELERATION": 300.0,
-		"MAX_SPEED": 300.0,
-		"FRICTION": 400.0,
-		"BRAKE_FORCE": 500.0,
-		"ROTATION_SPEED": 2.2,
-		"AIR_DRAG_COEFF": 0.0008,
-		"DRIFT_THRESHOLD": 120.0,
-	},
-	"hybrid": {
-		"ACCELERATION": 400.0,
-		"MAX_SPEED": 340.0,
-		"FRICTION": 300.0,
-		"BRAKE_FORCE": 600.0,
-		"ROTATION_SPEED": 2.6,
-		"AIR_DRAG_COEFF": 0.0006,
-		"DRIFT_THRESHOLD": 100.0,
-	}
-}
+# Drivetrain modifier cache (loaded from config)
+var drivetrain_modifier: Dictionary = {}
 
 # -------------------------
 # Lifecycle
@@ -84,20 +54,23 @@ func _ready() -> void:
 	drift_manager = DriftManager.new()
 	add_child(drift_manager)
 
-# Apply preset values
+# Apply preset values from ConfigManager
 func apply_tuning(mode: String) -> void:
-	if not TUNING_PRESETS.has(mode):
+	var preset = ConfigManager.get_car_preset(mode)
+	if preset.is_empty():
 		push_warning("Unknown tuning mode: %s" % mode)
 		return
 
-	var preset = TUNING_PRESETS[mode]
-	ACCELERATION = preset["ACCELERATION"]
-	MAX_SPEED = preset["MAX_SPEED"]
-	FRICTION = preset["FRICTION"]
-	BRAKE_FORCE = preset["BRAKE_FORCE"]
-	ROTATION_SPEED = preset["ROTATION_SPEED"]
-	AIR_DRAG_COEFF = preset["AIR_DRAG_COEFF"]
-	DRIFT_THRESHOLD = preset["DRIFT_THRESHOLD"]
+	ACCELERATION = preset.get("acceleration", 400.0)
+	MAX_SPEED = preset.get("max_speed", 340.0)
+	FRICTION = preset.get("friction", 300.0)
+	BRAKE_FORCE = preset.get("brake_force", 600.0)
+	ROTATION_SPEED = preset.get("rotation_speed", 2.6)
+	AIR_DRAG_COEFF = preset.get("air_drag_coeff", 0.0006)
+	DRIFT_THRESHOLD = preset.get("drift_threshold", 100.0)
+
+	# Load drivetrain modifier
+	drivetrain_modifier = ConfigManager.get_drivetrain_modifier(drive_type)
 
 # -------------------------
 # Physics process
@@ -139,15 +112,14 @@ func handle_input(delta: float) -> void:
 	# Steering only if moving
 	if velocity.length() > 10:
 		var direction := current_input.steer
-		var steer_strength = clamp(velocity.length() / (MAX_SPEED * 0.7), 0.2, 1.0)
+		var physics = ConfigManager.get_car_physics()
+		var speed_factor = physics.get("steering_speed_factor", 0.7)
+		var min_strength = physics.get("steering_min_strength", 0.2)
+		var max_strength = physics.get("steering_max_strength", 1.0)
+		var steer_strength = clamp(velocity.length() / (MAX_SPEED * speed_factor), min_strength, max_strength)
 
-		match drive_type:
-			"FWD":
-				rotation += direction * ROTATION_SPEED * delta * surface_props.rotation_multiplier * steer_strength
-			"RWD":
-				rotation += direction * ROTATION_SPEED * delta * surface_props.rotation_multiplier * steer_strength * 1.2
-			"AWD":
-				rotation += direction * ROTATION_SPEED * delta * surface_props.rotation_multiplier * steer_strength * 0.8
+		var steering_mult = drivetrain_modifier.get("steering_mult", 1.0)
+		rotation += direction * ROTATION_SPEED * delta * surface_props.rotation_multiplier * steer_strength * steering_mult
 
 	
 # -------------------------
@@ -168,17 +140,15 @@ func apply_physics(delta: float) -> void:
 
 	# Drift physics
 	var lateral = velocity - forward * velocity.dot(forward)
-	var steer_strength = clamp(velocity.length() / MAX_SPEED, 0.3, 1.0)
+	var physics = ConfigManager.get_car_physics()
+	var grip_min = physics.get("lateral_grip_clamp_min", 0.3)
+	var grip_max = physics.get("lateral_grip_clamp_max", 1.0)
+	var steer_strength = clamp(velocity.length() / MAX_SPEED, grip_min, grip_max)
 	velocity -= lateral * surface_props.drift_multiplier * steer_strength
 
-	# Extra grip differences by drivetrain
-	match drive_type:
-		"FWD":
-			velocity -= lateral * 0.4
-		"AWD":
-			velocity -= lateral * 0.2
-		"RWD":
-			velocity -= lateral * 0.05
+	# Extra grip differences by drivetrain (from config)
+	var lateral_grip = drivetrain_modifier.get("lateral_grip", 0.2)
+	velocity -= lateral * lateral_grip
 
 	# Clamp speed with surface multiplier
 	var max_speed = MAX_SPEED * surface_props.speed_multiplier
@@ -199,21 +169,27 @@ func handle_drift(delta: float) -> void:
 	update_drift_effects(drift_value * 100)
 	
 func update_drift_effects(drift_value: float) -> void:
+	var visuals = ConfigManager.get_visual_settings()
+	var particle_threshold = visuals.get("drift_particle_threshold", 60)
+	var particle_base = visuals.get("drift_particle_amount_base", 20)
+	var particle_scale = visuals.get("drift_particle_amount_scale", 80)
+	var tire_threshold = visuals.get("tire_marks_threshold", 100)
+	var tire_max_points = visuals.get("tire_marks_max_points", 100)
+
 	# Particle intensity
-	
-	drift_particles.emitting = drift_value > 60
-	drift_particles.amount = int(20 + (drift_value / 100) * 80)
+	drift_particles.emitting = drift_value > particle_threshold
+	drift_particles.amount = int(particle_base + (drift_value / 100) * particle_scale)
+
 	# Tire marks
-	if drift_value > 100:
+	if drift_value > tire_threshold:
 		tire_marks.add_point(tiremarks_pos.global_position)
-		if tire_marks.points.size() > 100:
+		if tire_marks.points.size() > tire_max_points:
 			tire_marks.remove_point(0)
 	else:
 		if tire_marks.points.size() > 2:
 			# Emit signal with current points
 			drift_marks_finished.emit(tire_marks.points)
 		tire_marks.clear_points()
-		pass
 		
 	## Tire sound volume#
 	## Camera shake (optional, if you have a Camera2D node with a shake script)

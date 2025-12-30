@@ -1,18 +1,14 @@
 extends Control
 ## Race Setup - Track selection and race settings
 
-# Track data
-var tracks = [
-	{"id": "sunset_circuit", "name": "Sunset Circuit", "scene": "res://scenes/world/main.tscn", "locked": false},
-	{"id": "mountain_pass", "name": "Mountain Pass", "scene": "", "locked": true},
-	{"id": "night_city", "name": "Night City", "scene": "", "locked": true}
-]
+# Track data (loaded from ConfigManager)
+var tracks: Array = []
 var current_track_index: int = 0
 
 # Settings options
 var lap_options = [1, 3, 5, 10]
 var opponent_options = [0, 3, 5, 7]
-var weather_options = ["Clear", "Rain", "Fog"]
+var weather_options: Array = []
 var difficulty_options = ["Easy", "Medium", "Hard", "Expert"]
 
 # Current selections (indices)
@@ -31,7 +27,17 @@ var difficulty_index: int = 1  # Default: Medium
 @onready var start_button: Button = $VBoxContainer/StartButton
 
 func _ready() -> void:
+	_load_from_config()
 	_update_all_labels()
+
+func _load_from_config() -> void:
+	# Load tracks from config
+	tracks = ConfigManager.get_all_tracks()
+
+	# Load weather options from config
+	weather_options.clear()
+	for weather_type in ConfigManager.get_weather_types():
+		weather_options.append(weather_type.capitalize())
 
 func _update_all_labels() -> void:
 	# Track
