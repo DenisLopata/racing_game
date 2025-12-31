@@ -1,41 +1,50 @@
-[gd_scene load_steps=2 format=3 uid="uid://part_item_scene"]
+[gd_scene load_steps=3 format=3 uid="uid://part_item_scene"]
 
 [ext_resource type="Script" path="res://scenes/UI/part_item.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://ctheme1racer" path="res://assets/themes/game_theme.tres" id="2_theme"]
 
 [node name="PartItem" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 60)
+theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
+theme = ExtResource("2_theme")
 theme_override_constants/separation = 12
 
 [node name="TierLabel" type="Label" parent="HBoxContainer"]
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
+theme = ExtResource("2_theme")
 text = "***"
 
 [node name="InfoContainer" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("2_theme")
 theme_override_constants/separation = 2
 
 [node name="NameLabel" type="Label" parent="HBoxContainer/InfoContainer"]
 layout_mode = 2
+theme = ExtResource("2_theme")
 text = "Part Name"
 
 [node name="StatsLabel" type="Label" parent="HBoxContainer/InfoContainer"]
 layout_mode = 2
+theme = ExtResource("2_theme")
 theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 text = "Accel: 1.0x  Speed: 1.0x"
 
 [node name="RequirementLabel" type="Label" parent="HBoxContainer"]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
+theme = ExtResource("2_theme")
 text = ""
 horizontal_alignment = 2
 
 [node name="ActionButton" type="Button" parent="HBoxContainer"]
 custom_minimum_size = Vector2(100, 40)
 layout_mode = 2
+theme = ExtResource("2_theme")
 text = "EQUIP"

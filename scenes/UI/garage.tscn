@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://garage_scene"]
+[gd_scene load_steps=4 format=3 uid="uid://garage_scene"]
 
 [ext_resource type="Script" path="res://scenes/UI/garage.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dj6qoj5u77c64" path="res://assets/sprites/cars/base_car.png" id="2_car_texture"]
+[ext_resource type="Theme" uid="uid://ctheme1racer" path="res://assets/themes/game_theme.tres" id="3_theme"]
 
 [node name="Garage" type="Control"]
 layout_mode = 3
@@ -9,6 +11,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("3_theme")
 script = ExtResource("1_script")
 
 [node name="ColorRect" type="ColorRect" parent="."]
@@ -31,15 +34,18 @@ offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("3_theme")
 theme_override_constants/separation = 15
 
 [node name="Header" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
+theme = ExtResource("3_theme")
 theme_override_constants/separation = 20
 
 [node name="BackButton" type="Button" parent="VBoxContainer/Header"]
 custom_minimum_size = Vector2(100, 40)
 layout_mode = 2
+theme = ExtResource("3_theme")
 text = "< Back"
 
 [node name="Spacer" type="Control" parent="VBoxContainer/Header"]
@@ -48,6 +54,7 @@ size_flags_horizontal = 3
 
 [node name="Title" type="Label" parent="VBoxContainer/Header"]
 layout_mode = 2
+theme = ExtResource("3_theme")
 text = "GARAGE"
 
 [node name="Spacer2" type="Control" parent="VBoxContainer/Header"]
@@ -56,62 +63,113 @@ size_flags_horizontal = 3
 
 [node name="StatsContainer" type="HBoxContainer" parent="VBoxContainer/Header"]
 layout_mode = 2
+theme = ExtResource("3_theme")
 theme_override_constants/separation = 20
 
 [node name="CurrencyLabel" type="Label" parent="VBoxContainer/Header/StatsContainer"]
 layout_mode = 2
+theme = ExtResource("3_theme")
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 text = "0"
 
 [node name="WinsLabel" type="Label" parent="VBoxContainer/Header/StatsContainer"]
 layout_mode = 2
+theme = ExtResource("3_theme")
 theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
 text = "0 Wins"
 
 [node name="TabsContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
+theme = ExtResource("3_theme")
 theme_override_constants/separation = 5
 
 [node name="EnginesTab" type="Button" parent="VBoxContainer/TabsContainer"]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("3_theme")
 text = "ENGINES"
 
 [node name="TiresTab" type="Button" parent="VBoxContainer/TabsContainer"]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("3_theme")
 text = "TIRES"
 
 [node name="SpoilersTab" type="Button" parent="VBoxContainer/TabsContainer"]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("3_theme")
 text = "SPOILERS"
 
 [node name="BrakesTab" type="Button" parent="VBoxContainer/TabsContainer"]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("3_theme")
 text = "BRAKES"
 
 [node name="SuspensionsTab" type="Button" parent="VBoxContainer/TabsContainer"]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_horizontal = 3
+theme = ExtResource("3_theme")
 text = "SUSPENSION"
 
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+[node name="ContentRow" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+theme = ExtResource("3_theme")
+theme_override_constants/separation = 20
 
-[node name="PartsContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+[node name="CarPreview" type="PanelContainer" parent="VBoxContainer/ContentRow"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/ContentRow/CarPreview"]
+layout_mode = 2
+theme = ExtResource("3_theme")
+theme_override_constants/separation = 10
+
+[node name="CarLabel" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "YOUR CAR"
+horizontal_alignment = 1
+
+[node name="CarSprite" type="TextureRect" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+texture = ExtResource("2_car_texture")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StatsLabel" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("3_theme")
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+text = "ACC: 1.00x
+SPD: 1.00x
+BRK: 1.00x
+GRP: 1.00x"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/ContentRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource("3_theme")
+
+[node name="PartsContainer" type="VBoxContainer" parent="VBoxContainer/ContentRow/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_theme")
 theme_override_constants/separation = 8
 
 [connection signal="pressed" from="VBoxContainer/Header/BackButton" to="." method="_on_back_button_pressed"]

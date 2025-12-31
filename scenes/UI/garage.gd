@@ -3,9 +3,10 @@ extends Control
 
 var current_category: PartData.Category = PartData.Category.ENGINES
 
-@onready var parts_container: VBoxContainer = $VBoxContainer/ScrollContainer/PartsContainer
+@onready var parts_container: VBoxContainer = $VBoxContainer/ContentRow/ScrollContainer/PartsContainer
 @onready var currency_label: Label = $VBoxContainer/Header/StatsContainer/CurrencyLabel
 @onready var wins_label: Label = $VBoxContainer/Header/StatsContainer/WinsLabel
+@onready var car_stats_label: Label = $VBoxContainer/ContentRow/CarPreview/VBoxContainer/StatsLabel
 
 @onready var tab_buttons: Array[Button] = [
 	$VBoxContainer/TabsContainer/EnginesTab,
@@ -23,6 +24,7 @@ const TAB_COLOR_INACTIVE := Color(0.7, 0.7, 0.7, 1)
 func _ready() -> void:
 	_connect_signals()
 	_update_header()
+	_update_car_stats()
 	_select_tab(PartData.Category.ENGINES)
 
 ## Connect to PlayerProgress signals
@@ -37,6 +39,17 @@ func _update_header() -> void:
 	if PlayerProgress:
 		currency_label.text = "%d" % PlayerProgress.currency
 		wins_label.text = "%d Wins" % PlayerProgress.wins
+
+## Update car stats display from equipped parts
+func _update_car_stats() -> void:
+	if PlayerProgress and car_stats_label:
+		var modifiers := CarModifiers.from_equipped(PlayerProgress.get_all_equipped())
+		car_stats_label.text = "ACC: %.2fx\nSPD: %.2fx\nBRK: %.2fx\nGRP: %.2fx" % [
+			modifiers.acceleration_mult,
+			modifiers.max_speed_mult,
+			modifiers.brake_mult,
+			modifiers.grip_mult
+		]
 
 ## Select a category tab
 func _select_tab(category: PartData.Category) -> void:
@@ -93,6 +106,7 @@ func _on_part_buy_pressed(category: PartData.Category, part_id: String) -> void:
 func _on_part_equip_pressed(category: PartData.Category, part_id: String) -> void:
 	if PlayerProgress.equip_part(category, part_id):
 		_refresh_parts_list()
+		_update_car_stats()
 
 ## Handle currency changed signal
 func _on_currency_changed(_new_amount: int) -> void:
@@ -102,6 +116,7 @@ func _on_currency_changed(_new_amount: int) -> void:
 ## Handle part state changed
 func _on_part_changed(_part_id: String, _category: PartData.Category) -> void:
 	_refresh_parts_list()
+	_update_car_stats()
 
 # =============================================================================
 # Button Handlers
