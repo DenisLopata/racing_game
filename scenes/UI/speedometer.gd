@@ -5,6 +5,7 @@ extends Control
 @onready var lbl_speed: Label = $MarginContainer/HBoxContainer/lblSpeed
 @onready var lbl_lap: Label = $MarginContainer/HBoxContainer/lblLap
 @onready var lbl_lap_time: Label = $MarginContainer/HBoxContainer/lblLapTime
+@onready var lbl_stats: Label = $MarginContainer/HBoxContainer/lblStats
 
 var lbl_position: Label
 
@@ -43,3 +44,12 @@ func set_race_position(pos: int, total: int) -> void:
 
 func set_total_laps(current: int, total: int) -> void:
 	lbl_lap.text = "Lap: %d/%d" % [current, total]
+
+## Display car stats from part modifiers
+func set_car_stats(modifiers: CarModifiers) -> void:
+	if modifiers and lbl_stats:
+		lbl_stats.text = "ACC:%.1f SPD:%.1f BRK:%.1f" % [
+			modifiers.acceleration_mult,
+			modifiers.max_speed_mult,
+			modifiers.brake_mult
+		]

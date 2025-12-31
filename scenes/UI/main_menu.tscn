@@ -50,6 +50,12 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "START GAME"
 
+[node name="GarageButton" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "GARAGE"
+
 [node name="OptionsButton" type="Button" parent="VBoxContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
@@ -63,5 +69,6 @@ size_flags_horizontal = 4
 text = "QUIT"
 
 [connection signal="pressed" from="VBoxContainer/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/GarageButton" to="." method="_on_garage_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/OptionsButton" to="." method="_on_options_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/QuitButton" to="." method="_on_quit_button_pressed"]

@@ -46,11 +46,20 @@ text = "0 km/h"
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="lblStats" type="Label" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 1)
+text = "ACC:1.0 SPD:1.0 BRK:1.0"
+
+[node name="Spacer2" type="Control" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="lblLap" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Lap: 1/3"
 
-[node name="Spacer2" type="Control" parent="MarginContainer/HBoxContainer"]
+[node name="Spacer3" type="Control" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 

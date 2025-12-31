@@ -1,0 +1,122 @@
+[gd_scene load_steps=2 format=3 uid="uid://garage_scene"]
+
+[ext_resource type="Script" path="res://scenes/UI/garage.gd" id="1_script"]
+
+[node name="Garage" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 15
+
+[node name="Header" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="BackButton" type="Button" parent="VBoxContainer/Header"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = "< Back"
+
+[node name="Spacer" type="Control" parent="VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Title" type="Label" parent="VBoxContainer/Header"]
+layout_mode = 2
+text = "GARAGE"
+
+[node name="Spacer2" type="Control" parent="VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsContainer" type="HBoxContainer" parent="VBoxContainer/Header"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="CurrencyLabel" type="Label" parent="VBoxContainer/Header/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+text = "0"
+
+[node name="WinsLabel" type="Label" parent="VBoxContainer/Header/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.4, 1)
+text = "0 Wins"
+
+[node name="TabsContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="EnginesTab" type="Button" parent="VBoxContainer/TabsContainer"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ENGINES"
+
+[node name="TiresTab" type="Button" parent="VBoxContainer/TabsContainer"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "TIRES"
+
+[node name="SpoilersTab" type="Button" parent="VBoxContainer/TabsContainer"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SPOILERS"
+
+[node name="BrakesTab" type="Button" parent="VBoxContainer/TabsContainer"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BRAKES"
+
+[node name="SuspensionsTab" type="Button" parent="VBoxContainer/TabsContainer"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SUSPENSION"
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PartsContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[connection signal="pressed" from="VBoxContainer/Header/BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/TabsContainer/EnginesTab" to="." method="_on_engines_tab_pressed"]
+[connection signal="pressed" from="VBoxContainer/TabsContainer/TiresTab" to="." method="_on_tires_tab_pressed"]
+[connection signal="pressed" from="VBoxContainer/TabsContainer/SpoilersTab" to="." method="_on_spoilers_tab_pressed"]
+[connection signal="pressed" from="VBoxContainer/TabsContainer/BrakesTab" to="." method="_on_brakes_tab_pressed"]
+[connection signal="pressed" from="VBoxContainer/TabsContainer/SuspensionsTab" to="." method="_on_suspensions_tab_pressed"]

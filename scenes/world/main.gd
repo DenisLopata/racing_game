@@ -102,6 +102,10 @@ func _load_from_config() -> void:
 	car.use_player_upgrades = true
 	car.refresh_upgrades()
 
+	# Show car stats on speedometer
+	if speedometer and car.part_modifiers:
+		speedometer.set_car_stats(car.part_modifiers)
+
 	# Register player car with RaceManager
 	RaceManager.register_car(car)
 
