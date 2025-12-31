@@ -15,6 +15,15 @@
 	"grid_row_spacing": 40.0,
 	"grid_column_offset": 30.0
   },
+  "procedural": {
+	"name": "Procedural Track",
+	"scene": "res://scenes/world/procedural_track.tscn",
+	"locked": false,
+	"is_procedural": true,
+	"grid_start_position": [0, 0],
+	"grid_row_spacing": 40.0,
+	"grid_column_offset": 30.0
+  },
   "night_city": {
 	"name": "Night City",
 	"scene": "",

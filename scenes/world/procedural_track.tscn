@@ -1,0 +1,48 @@
+[gd_scene load_steps=8 format=3 uid="uid://procedural_track_scene"]
+
+[ext_resource type="PackedScene" uid="uid://bidpihbx86rla" path="res://scenes/entites/car.tscn" id="1_car"]
+[ext_resource type="Script" path="res://scripts/track/procedural/procedural_track_scene.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ber1ko386ofrq" path="res://scripts/surfaces/surface_manager.gd" id="2_surface"]
+[ext_resource type="PackedScene" uid="uid://buk6n2o4nqksj" path="res://scenes/UI/speedometer.tscn" id="3_speedo"]
+[ext_resource type="Script" uid="uid://f8l54dhhexxv" path="res://scripts/laps/lap_tracker.gd" id="4_lap"]
+[ext_resource type="TileSet" uid="uid://track_tileset_shared" path="res://assets/tilesets/track_tileset.tres" id="5_tileset"]
+
+[node name="ProceduralTrack" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+tile_set = ExtResource("5_tileset")
+
+[node name="Car" parent="." groups=["PlayerCar"] instance=ExtResource("1_car")]
+position = Vector2(400, 400)
+
+[node name="TireMarksLine2D" type="Line2D" parent="."]
+width = 2.0
+default_color = Color(0, 0, 0, 0.3)
+
+[node name="SurfaceManager" type="Node" parent="."]
+script = ExtResource("2_surface")
+
+[node name="LapTracker" type="Node" parent="."]
+script = ExtResource("4_lap")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Control" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Speedometer" parent="UI/Control" instance=ExtResource("3_speedo")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_top = 0.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 1

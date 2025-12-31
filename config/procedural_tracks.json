@@ -1,0 +1,44 @@
+{
+	"size_presets": {
+		"small": {
+			"map_size": [60, 60],
+			"min_radius": 8,
+			"max_radius": 15,
+			"control_points": 6,
+			"base_width": 4
+		},
+		"medium": {
+			"map_size": [80, 80],
+			"min_radius": 12,
+			"max_radius": 22,
+			"control_points": 10,
+			"base_width": 5
+		},
+		"large": {
+			"map_size": [100, 100],
+			"min_radius": 18,
+			"max_radius": 30,
+			"control_points": 14,
+			"base_width": 6
+		}
+	},
+	"difficulty": {
+		"few_turns": {
+			"radius_variance": 0.15,
+			"angle_variance": 0.1,
+			"width_variance": 0.1
+		},
+		"moderate": {
+			"radius_variance": 0.35,
+			"angle_variance": 0.25,
+			"width_variance": 0.2
+		},
+		"many_turns": {
+			"radius_variance": 0.55,
+			"angle_variance": 0.4,
+			"width_variance": 0.3
+		}
+	},
+	"zone_types": ["forest", "desert", "rocky", "plains", "swamp"],
+	"zone_count": 5
+}

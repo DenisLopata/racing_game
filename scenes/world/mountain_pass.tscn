@@ -6,8 +6,8 @@
 [ext_resource type="Script" uid="uid://bg854dvn4ir4j" path="res://scenes/world/start_line.gd" id="5_7qvhs"]
 [ext_resource type="Script" uid="uid://ber1ko386ofrq" path="res://scripts/surfaces/surface_manager.gd" id="6_1xfry"]
 [ext_resource type="Script" uid="uid://f8l54dhhexxv" path="res://scripts/laps/lap_tracker.gd" id="7_nbqqj"]
-[ext_resource type="TileSet" uid="uid://track_tileset_shared" path="res://assets/tilesets/track_tileset.tres" id="9_tileset"]
 [ext_resource type="PackedScene" uid="uid://buk6n2o4nqksj" path="res://scenes/UI/speedometer.tscn" id="8_wk01e"]
+[ext_resource type="TileSet" path="res://assets/tilesets/track_tileset.tres" id="9_tileset"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_vunec")
@@ -47,4 +47,3 @@ grow_vertical = 2
 [node name="Speedometer" parent="UI/Control" instance=ExtResource("8_wk01e")]
 unique_name_in_owner = true
 layout_mode = 1
-offset_bottom = 0.0

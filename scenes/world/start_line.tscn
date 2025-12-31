@@ -1,9 +1,12 @@
-[gd_scene load_steps=2 format=3 uid="uid://dnuu4dkvxpimq"]
+[gd_scene load_steps=3 format=3 uid="uid://dnuu4dkvxpimq"]
+
+[ext_resource type="Script" uid="uid://bg854dvn4ir4j" path="res://scenes/world/start_line.gd" id="1_script"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7tdlr"]
 size = Vector2(450, 20)
 
 [node name="StartLine" type="Area2D"]
+script = ExtResource("1_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(295, 325)
