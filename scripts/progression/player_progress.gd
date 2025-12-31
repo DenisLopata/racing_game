@@ -8,13 +8,29 @@ signal part_unlocked(part_id: String, category: PartData.Category)
 signal part_purchased(part_id: String, category: PartData.Category)
 signal part_equipped(part_id: String, category: PartData.Category)
 signal wins_changed(new_wins: int)
+signal car_color_changed(new_color: Color)
 
 const SAVE_PATH: String = "user://player_progress.json"
+
+## Preset car colors
+const CAR_COLORS: Array[Color] = [
+	Color.WHITE,
+	Color.RED,
+	Color.BLUE,
+	Color.GREEN,
+	Color.YELLOW,
+	Color.ORANGE,
+	Color.PURPLE,
+	Color.CYAN,
+	Color.HOT_PINK,
+	Color.LIME_GREEN
+]
 
 ## Player stats (strongly typed)
 var currency: int = 0
 var wins: int = 0
 var races_completed: int = 0
+var car_color_index: int = 0  # Index into CAR_COLORS
 
 ## Parts tracking - category string -> Array of part IDs
 ## Using strings for JSON compatibility, but validated against PartData.Category
@@ -46,6 +62,7 @@ func save_progress() -> void:
 		"currency": currency,
 		"wins": wins,
 		"races_completed": races_completed,
+		"car_color_index": car_color_index,
 		"unlocked_parts": _unlocked_parts,
 		"owned_parts": _owned_parts,
 		"equipped": _equipped
@@ -73,6 +90,7 @@ func load_progress() -> void:
 			currency = int(data.get("currency", 0))
 			wins = int(data.get("wins", 0))
 			races_completed = int(data.get("races_completed", 0))
+			car_color_index = int(data.get("car_color_index", 0))
 
 			# Load parts data with fallback to defaults
 			var loaded_unlocked: Dictionary = data.get("unlocked_parts", {})
@@ -304,11 +322,33 @@ func get_owned_parts(category: PartData.Category) -> Array:
 	var cat_str := PartData.category_to_string(category)
 	return _owned_parts.get(cat_str, []).duplicate()
 
+# =============================================================================
+# Car Color
+# =============================================================================
+
+## Get current car color
+func get_car_color() -> Color:
+	if car_color_index >= 0 and car_color_index < CAR_COLORS.size():
+		return CAR_COLORS[car_color_index]
+	return Color.WHITE
+
+## Set car color by index
+func set_car_color(index: int) -> void:
+	if index >= 0 and index < CAR_COLORS.size():
+		car_color_index = index
+		car_color_changed.emit(get_car_color())
+		save_progress()
+
+## Get all available colors
+func get_available_colors() -> Array[Color]:
+	return CAR_COLORS
+
 ## Reset progress (for testing or new game)
 func reset_progress() -> void:
 	currency = 0
 	wins = 0
 	races_completed = 0
+	car_color_index = 0
 	_init_defaults()
 	save_progress()
 	print("[PlayerProgress] Progress reset!")

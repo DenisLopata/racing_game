@@ -106,6 +106,10 @@ func _load_from_config() -> void:
 	if speedometer and car.part_modifiers:
 		speedometer.set_car_stats(car.part_modifiers)
 
+	# Apply player's selected car color
+	if PlayerProgress:
+		car.get_node("Sprite2D").modulate = PlayerProgress.get_car_color()
+
 	# Register player car with RaceManager
 	RaceManager.register_car(car)
 

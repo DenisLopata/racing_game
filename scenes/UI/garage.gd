@@ -7,6 +7,9 @@ var current_category: PartData.Category = PartData.Category.ENGINES
 @onready var currency_label: Label = $VBoxContainer/Header/StatsContainer/CurrencyLabel
 @onready var wins_label: Label = $VBoxContainer/Header/StatsContainer/WinsLabel
 @onready var car_stats_label: Label = $VBoxContainer/ContentRow/CarPreview/VBoxContainer/StatsLabel
+@onready var car_sprite: TextureRect = $VBoxContainer/ContentRow/CarPreview/VBoxContainer/CarSprite
+@onready var color_popup: PanelContainer = $ColorPopup
+@onready var color_grid: GridContainer = $ColorPopup/VBoxContainer/ColorGrid
 
 @onready var tab_buttons: Array[Button] = [
 	$VBoxContainer/TabsContainer/EnginesTab,
@@ -25,6 +28,8 @@ func _ready() -> void:
 	_connect_signals()
 	_update_header()
 	_update_car_stats()
+	_setup_color_popup()
+	_update_car_color()
 	_select_tab(PartData.Category.ENGINES)
 
 ## Connect to PlayerProgress signals
@@ -50,6 +55,30 @@ func _update_car_stats() -> void:
 			modifiers.brake_mult,
 			modifiers.grip_mult
 		]
+
+## Setup color popup with color buttons
+func _setup_color_popup() -> void:
+	if not PlayerProgress or not color_grid:
+		return
+
+	var colors := PlayerProgress.get_available_colors()
+	for i in range(colors.size()):
+		var btn := Button.new()
+		btn.custom_minimum_size = Vector2(32, 32)
+		btn.modulate = colors[i]
+		btn.pressed.connect(_on_popup_color_pressed.bind(i))
+		color_grid.add_child(btn)
+
+## Handle color selection in popup
+func _on_popup_color_pressed(index: int) -> void:
+	PlayerProgress.set_car_color(index)
+	_update_car_color()
+	color_popup.visible = false
+
+## Update car preview with selected color
+func _update_car_color() -> void:
+	if PlayerProgress and car_sprite:
+		car_sprite.modulate = PlayerProgress.get_car_color()
 
 ## Select a category tab
 func _select_tab(category: PartData.Category) -> void:
@@ -139,3 +168,9 @@ func _on_brakes_tab_pressed() -> void:
 
 func _on_suspensions_tab_pressed() -> void:
 	_select_tab(PartData.Category.SUSPENSIONS)
+
+func _on_change_color_button_pressed() -> void:
+	color_popup.visible = true
+
+func _on_close_popup_pressed() -> void:
+	color_popup.visible = false
