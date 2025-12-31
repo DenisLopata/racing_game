@@ -29,8 +29,8 @@ func load_all_configs() -> void:
 	parts = _load_json("parts.json")
 
 ## Reload a specific config file
-func reload_config(name: String) -> void:
-	match name:
+func reload_config(config_name: String) -> void:
+	match config_name:
 		"cars":
 			cars = _load_json("cars.json")
 		"ai_difficulty":
@@ -45,7 +45,7 @@ func reload_config(name: String) -> void:
 			game = _load_json("game.json")
 		"parts":
 			parts = _load_json("parts.json")
-	config_reloaded.emit(name)
+	config_reloaded.emit(config_name)
 
 ## Reload all configs (hot-reload)
 func reload_all() -> void:

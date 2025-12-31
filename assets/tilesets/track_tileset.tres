@@ -1,0 +1,33 @@
+[gd_resource type="TileSet" load_steps=2 format=3 uid="uid://track_tileset_shared"]
+
+[ext_resource type="Texture2D" uid="uid://ytu4kv1gdnat" path="res://assets/tilesets/generated_image.png" id="1_texture"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_track"]
+resource_name = "track"
+texture = ExtResource("1_texture")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+0:1/0 = 0
+0:1/0/custom_data_0 = "deep_grass"
+1:1/0 = 0
+1:1/0/custom_data_0 = "grass"
+2:1/0 = 0
+3:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+1:2/0/custom_data_0 = "dirt"
+2:2/0 = 0
+2:2/0/custom_data_0 = "road"
+3:2/0 = 0
+0:3/0 = 0
+0:3/0/custom_data_0 = "sand"
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+
+[resource]
+custom_data_layer_0/name = "surface"
+custom_data_layer_0/type = 4
+sources/0 = SubResource("TileSetAtlasSource_track")

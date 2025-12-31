@@ -64,12 +64,12 @@ func draw_all_lines() -> void:
 		_draw_line("optimal", lines["optimal"], COLOR_OPTIMAL, WIDTH_OPTIMAL)
 
 ## Draw a single line
-func _draw_line(name: String, points: PackedVector2Array, color: Color, width: float) -> void:
+func _draw_line(line_name: String, points: PackedVector2Array, color: Color, width: float) -> void:
 	if points.size() < 2:
 		return
 
 	var line = Line2D.new()
-	line.name = "Debug_" + name
+	line.name = "Debug_" + line_name
 	line.width = width
 	line.default_color = color
 	line.points = points
@@ -79,7 +79,7 @@ func _draw_line(name: String, points: PackedVector2Array, color: Color, width: f
 		line.add_point(points[0])
 
 	add_child(line)
-	line_nodes[name] = line
+	line_nodes[line_name] = line
 
 ## Clear all debug lines
 func _clear_all_lines() -> void:
