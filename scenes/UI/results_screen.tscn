@@ -44,6 +44,12 @@ layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 20
 
+[node name="SaveTrackButton" type="Button" parent="Panel/MarginContainer/VBoxContainer/ButtonContainer"]
+visible = false
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+text = "Save Track"
+
 [node name="RestartButton" type="Button" parent="Panel/MarginContainer/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2

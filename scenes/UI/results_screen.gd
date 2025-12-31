@@ -4,14 +4,18 @@ extends CanvasLayer
 
 @onready var results_container: VBoxContainer = $Panel/MarginContainer/VBoxContainer/ResultsContainer
 @onready var title_label: Label = $Panel/MarginContainer/VBoxContainer/TitleLabel
+@onready var save_track_button: Button = $Panel/MarginContainer/VBoxContainer/ButtonContainer/SaveTrackButton
 @onready var restart_button: Button = $Panel/MarginContainer/VBoxContainer/ButtonContainer/RestartButton
 @onready var quit_button: Button = $Panel/MarginContainer/VBoxContainer/ButtonContainer/QuitButton
 
 signal restart_requested()
 signal quit_requested()
 
+var track_saved: bool = false
+
 func _ready() -> void:
 	hide()
+	save_track_button.pressed.connect(_on_save_track_pressed)
 	restart_button.pressed.connect(_on_restart_pressed)
 	quit_button.pressed.connect(_on_quit_pressed)
 
@@ -19,6 +23,17 @@ func show_results(results: Array, player_car: Car) -> void:
 	# Clear previous results
 	for child in results_container.get_children():
 		child.queue_free()
+
+	# Reset save state
+	track_saved = false
+
+	# Show save button only for procedural tracks
+	if GameSettings.is_procedural_track:
+		save_track_button.visible = true
+		save_track_button.text = "Save Track"
+		save_track_button.disabled = false
+	else:
+		save_track_button.visible = false
 
 	# Find player position
 	var player_position = 1
@@ -94,3 +109,16 @@ func _on_restart_pressed() -> void:
 
 func _on_quit_pressed() -> void:
 	quit_requested.emit()
+
+func _on_save_track_pressed() -> void:
+	if track_saved:
+		return
+
+	# Generate a name based on seed
+	var track_name = "Track_%d" % GameSettings.procedural_seed
+	GameSettings.save_favorite_track(track_name)
+
+	# Update button to show saved
+	track_saved = true
+	save_track_button.text = "Saved!"
+	save_track_button.disabled = true

@@ -40,6 +40,11 @@ var turns_index: int = 1  # Default: Moderate
 @onready var size_label: Label = $ScrollContainer/VBoxContainer/ProceduralOptions/SizeRow/SizeValue
 @onready var turns_label: Label = $ScrollContainer/VBoxContainer/ProceduralOptions/TurnsRow/TurnsValue
 
+# Saved tracks popup references
+@onready var saved_tracks_popup: Panel = $SavedTracksPopup
+@onready var track_list: VBoxContainer = $SavedTracksPopup/VBoxContainer/ScrollContainer/TrackList
+@onready var no_tracks_label: Label = $SavedTracksPopup/VBoxContainer/NoTracksLabel
+
 func _ready() -> void:
 	_load_from_config()
 	_update_all_labels()
@@ -171,3 +176,68 @@ func _on_turns_prev_pressed() -> void:
 func _on_turns_next_pressed() -> void:
 	turns_index = (turns_index + 1) % turns_options.size()
 	_update_all_labels()
+
+# Saved tracks popup handlers
+func _on_load_saved_pressed() -> void:
+	_populate_saved_tracks()
+	saved_tracks_popup.visible = true
+
+func _on_saved_tracks_close_pressed() -> void:
+	saved_tracks_popup.visible = false
+
+func _populate_saved_tracks() -> void:
+	# Clear existing entries
+	for child in track_list.get_children():
+		child.queue_free()
+
+	var saved = GameSettings.get_saved_tracks()
+
+	if saved.is_empty():
+		no_tracks_label.visible = true
+		return
+
+	no_tracks_label.visible = false
+
+	for i in saved.size():
+		var track_data = saved[i]
+		var entry = _create_saved_track_entry(i, track_data)
+		track_list.add_child(entry)
+
+func _create_saved_track_entry(index: int, track_data: Dictionary) -> HBoxContainer:
+	var entry = HBoxContainer.new()
+	entry.add_theme_constant_override("separation", 10)
+
+	# Track name label
+	var name_label = Label.new()
+	name_label.text = track_data.get("name", "Track")
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry.add_child(name_label)
+
+	# Load button
+	var load_btn = Button.new()
+	load_btn.text = "Load"
+	load_btn.custom_minimum_size = Vector2(60, 25)
+	load_btn.pressed.connect(_on_load_track.bind(index))
+	entry.add_child(load_btn)
+
+	# Delete button
+	var delete_btn = Button.new()
+	delete_btn.text = "Del"
+	delete_btn.custom_minimum_size = Vector2(40, 25)
+	delete_btn.pressed.connect(_on_delete_track.bind(index))
+	entry.add_child(delete_btn)
+
+	return entry
+
+func _on_load_track(index: int) -> void:
+	if GameSettings.load_saved_track(index):
+		# Update UI with loaded settings
+		seed_input.text = str(GameSettings.procedural_seed)
+		size_index = GameSettings.procedural_size
+		turns_index = GameSettings.procedural_difficulty
+		_update_all_labels()
+		saved_tracks_popup.visible = false
+
+func _on_delete_track(index: int) -> void:
+	GameSettings.delete_saved_track(index)
+	_populate_saved_tracks()

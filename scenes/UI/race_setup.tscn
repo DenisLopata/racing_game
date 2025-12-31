@@ -182,6 +182,11 @@ custom_minimum_size = Vector2(40, 30)
 layout_mode = 2
 text = ">"
 
+[node name="LoadSavedButton" type="Button" parent="ScrollContainer/VBoxContainer/ProceduralOptions"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+text = "Load Saved Track"
+
 [node name="ProceduralSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/ProceduralOptions"]
 layout_mode = 2
 
@@ -299,6 +304,59 @@ layout_mode = 2
 size_flags_horizontal = 4
 text = "START RACE"
 
+[node name="SavedTracksPopup" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SavedTracksPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="SavedTracksPopup/VBoxContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="SavedTracksPopup/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Saved Tracks"
+
+[node name="CloseButton" type="Button" parent="SavedTracksPopup/VBoxContainer/Header"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="SavedTracksPopup/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="TrackList" type="VBoxContainer" parent="SavedTracksPopup/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="NoTracksLabel" type="Label" parent="SavedTracksPopup/VBoxContainer"]
+visible = false
+layout_mode = 2
+text = "No saved tracks yet"
+horizontal_alignment = 1
+
 [connection signal="pressed" from="Header/BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/TrackRow/TrackPrev" to="." method="_on_track_prev_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/TrackRow/TrackNext" to="." method="_on_track_next_pressed"]
@@ -307,6 +365,8 @@ text = "START RACE"
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/ProceduralOptions/SizeRow/SizeNext" to="." method="_on_size_next_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/ProceduralOptions/TurnsRow/TurnsPrev" to="." method="_on_turns_prev_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/ProceduralOptions/TurnsRow/TurnsNext" to="." method="_on_turns_next_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/ProceduralOptions/LoadSavedButton" to="." method="_on_load_saved_pressed"]
+[connection signal="pressed" from="SavedTracksPopup/VBoxContainer/Header/CloseButton" to="." method="_on_saved_tracks_close_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/LapsRow/LapsPrev" to="." method="_on_laps_prev_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/LapsRow/LapsNext" to="." method="_on_laps_next_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/OpponentsRow/OpponentsPrev" to="." method="_on_opponents_prev_pressed"]
