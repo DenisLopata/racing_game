@@ -23,14 +23,17 @@ func _update_labels() -> void:
 
 func _on_master_slider_value_changed(value: float) -> void:
 	GameSettings.master_volume = value / 100.0
+	GameSettings._apply_audio_settings()  # Apply immediately so user can hear
 	_update_labels()
 
 func _on_music_slider_value_changed(value: float) -> void:
 	GameSettings.music_volume = value / 100.0
+	GameSettings._apply_audio_settings()  # Apply immediately so user can hear
 	_update_labels()
 
 func _on_sfx_slider_value_changed(value: float) -> void:
 	GameSettings.sfx_volume = value / 100.0
+	GameSettings._apply_audio_settings()  # Apply immediately so user can hear
 	_update_labels()
 
 func _on_save_button_pressed() -> void:

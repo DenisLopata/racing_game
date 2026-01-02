@@ -49,6 +49,14 @@ var AVOIDANCE_DISTANCE: float = 80.0
 var AVOIDANCE_SIDE_DISTANCE: float = 40.0
 var AVOIDANCE_SLOWDOWN_DISTANCE: float = 60.0
 
+## Pit strategy settings
+var pit_damage_threshold: float = 0.4  # Seek pit when total damage > 40%
+var critical_damage_threshold: float = 0.6  # Drive very cautiously above 60%
+var is_seeking_pit: bool = false
+var pit_stop_zone: Node2D = null  # Reference to pit stop area
+var damage_speed_penalty: float = 0.0  # 0.0 to 0.3 based on damage
+var damage_caution_factor: float = 1.0  # Reduces aggression when damaged
+
 func _load_constants() -> void:
 	var constants = ConfigManager.get_ai_constants()
 	STUCK_SPEED_THRESHOLD = constants.get("stuck_speed_threshold", 20.0)
@@ -73,10 +81,14 @@ func get_input() -> InputState:
 	if car == null or waypoint_path == null:
 		return state
 
+	# Update damage awareness
+	_update_damage_awareness()
+
 	# Get car state
 	var car_pos = car.global_position
 	var car_rotation = car.rotation
 	var car_speed = car.velocity.length()
+	# Note: Car sprite is rotated 180° so use DOWN as base forward
 	var car_forward = Vector2.UP.rotated(car_rotation)
 
 	# Update stuck detection
@@ -128,7 +140,8 @@ func get_input() -> InputState:
 
 	# Calculate throttle and brake
 	var speed_hint = waypoint_path.get_speed_hint_at_offset(target_offset)
-	var target_speed = car.MAX_SPEED * max_speed_percent * speed_hint
+	var effective_max_speed = max_speed_percent * (1.0 - damage_speed_penalty)
+	var target_speed = car.MAX_SPEED * effective_max_speed * speed_hint
 
 	# Check for upcoming corner
 	var distance_to_corner = waypoint_path.get_distance_to_corner(current_offset)
@@ -339,3 +352,80 @@ func _calculate_avoidance_steering(nearby_cars: Array) -> float:
 			avoidance_steer += 0.3 * influence
 
 	return clamp(avoidance_steer, -0.6, 0.6)
+
+# =============================================================================
+# Pit Strategy and Damage Awareness
+# =============================================================================
+
+## Update damage awareness and pit strategy
+func _update_damage_awareness() -> void:
+	if not DamageSystem or car == null:
+		damage_speed_penalty = 0.0
+		damage_caution_factor = 1.0
+		is_seeking_pit = false
+		return
+
+	var damage_state = DamageSystem.get_damage_state(car)
+	if damage_state == null:
+		damage_speed_penalty = 0.0
+		damage_caution_factor = 1.0
+		is_seeking_pit = false
+		return
+
+	# Calculate total damage percentage
+	var total_damage = damage_state.get_total_damage_percent()
+
+	# Adjust driving based on damage level
+	if total_damage >= critical_damage_threshold:
+		# Critical damage - drive very cautiously
+		damage_speed_penalty = 0.25  # 25% slower
+		damage_caution_factor = 0.5  # Much less aggressive
+		is_seeking_pit = true
+	elif total_damage >= pit_damage_threshold:
+		# Moderate damage - drive more carefully, consider pit
+		damage_speed_penalty = 0.15  # 15% slower
+		damage_caution_factor = 0.75  # Less aggressive
+		is_seeking_pit = _should_seek_pit(total_damage)
+	else:
+		# Low/no damage - drive normally
+		damage_speed_penalty = 0.0
+		damage_caution_factor = 1.0
+		is_seeking_pit = false
+
+## Determine if AI should seek the pit (weighs damage vs race position)
+func _should_seek_pit(damage_percent: float) -> bool:
+	# Get current race position
+	var position = RaceManager.get_car_position(car)
+	var total_cars = RaceManager.registered_cars.size()
+
+	# If leading or close to lead, be more reluctant to pit
+	if position <= 2:
+		# Only pit if damage is very high
+		return damage_percent >= 0.5
+
+	# If in the middle of pack, consider pit more readily
+	if position <= total_cars / 2:
+		return damage_percent >= pit_damage_threshold
+
+	# If at the back, pit readily since we have less to lose
+	return damage_percent >= pit_damage_threshold * 0.8
+
+## Set pit stop zone reference
+func set_pit_stop_zone(zone: Node2D) -> void:
+	pit_stop_zone = zone
+
+## Check if car is near pit and should enter
+func is_near_pit() -> bool:
+	if pit_stop_zone == null or car == null:
+		return false
+
+	var distance = car.global_position.distance_to(pit_stop_zone.global_position)
+	return distance < 100.0  # Within 100 pixels of pit
+
+## Get whether AI is currently seeking pit
+func get_is_seeking_pit() -> bool:
+	return is_seeking_pit
+
+## Get current damage-based speed penalty (0.0 to 0.3)
+func get_damage_speed_penalty() -> float:
+	return damage_speed_penalty

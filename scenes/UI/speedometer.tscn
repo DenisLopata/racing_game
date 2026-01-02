@@ -42,6 +42,70 @@ theme_override_constants/separation = 20
 layout_mode = 2
 text = "0 km/h"
 
+[node name="GearPanel" type="HBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="lblGear" type="Label" parent="MarginContainer/HBoxContainer/GearPanel"]
+custom_minimum_size = Vector2(24, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "1"
+horizontal_alignment = 1
+
+[node name="RpmContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer/GearPanel"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="RpmBar" type="ProgressBar" parent="MarginContainer/HBoxContainer/GearPanel/RpmContainer"]
+custom_minimum_size = Vector2(50, 8)
+layout_mode = 2
+max_value = 1.0
+value = 0.5
+show_percentage = false
+
+[node name="RpmLabel" type="Label" parent="MarginContainer/HBoxContainer/GearPanel/RpmContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 8
+text = "RPM"
+horizontal_alignment = 1
+
+[node name="DamagePanel" type="HBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="EngineIndicator" type="ColorRect" parent="MarginContainer/HBoxContainer/DamagePanel"]
+custom_minimum_size = Vector2(8, 16)
+layout_mode = 2
+color = Color(0, 1, 0, 1)
+tooltip_text = "Engine"
+
+[node name="TiresIndicator" type="ColorRect" parent="MarginContainer/HBoxContainer/DamagePanel"]
+custom_minimum_size = Vector2(8, 16)
+layout_mode = 2
+color = Color(0, 1, 0, 1)
+tooltip_text = "Tires"
+
+[node name="BrakesIndicator" type="ColorRect" parent="MarginContainer/HBoxContainer/DamagePanel"]
+custom_minimum_size = Vector2(8, 16)
+layout_mode = 2
+color = Color(0, 1, 0, 1)
+tooltip_text = "Brakes"
+
+[node name="SuspensionIndicator" type="ColorRect" parent="MarginContainer/HBoxContainer/DamagePanel"]
+custom_minimum_size = Vector2(8, 16)
+layout_mode = 2
+color = Color(0, 1, 0, 1)
+tooltip_text = "Suspension"
+
+[node name="SpoilerIndicator" type="ColorRect" parent="MarginContainer/HBoxContainer/DamagePanel"]
+custom_minimum_size = Vector2(8, 16)
+layout_mode = 2
+color = Color(0, 1, 0, 1)
+tooltip_text = "Spoiler"
+
 [node name="Spacer" type="Control" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -66,3 +130,25 @@ size_flags_horizontal = 3
 [node name="lblLapTime" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Time: 0.00"
+
+[node name="PitIndicator" type="HBoxContainer" parent="MarginContainer/HBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PitLabel" type="Label" parent="MarginContainer/HBoxContainer/PitIndicator"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 1, 1)
+text = "PIT"
+
+[node name="RepairBar" type="ProgressBar" parent="MarginContainer/HBoxContainer/PitIndicator"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+max_value = 1.0
+value = 0.5
+show_percentage = false
+
+[node name="RepairPart" type="Label" parent="MarginContainer/HBoxContainer/PitIndicator"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+text = ""

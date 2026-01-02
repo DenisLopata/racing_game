@@ -85,6 +85,30 @@ func get_drivetrain_modifier(drivetrain: String) -> Dictionary:
 func get_car_physics() -> Dictionary:
 	return cars.get("physics", {})
 
+## Get enhanced physics configuration
+func get_enhanced_physics() -> Dictionary:
+	return cars.get("enhanced_physics", {})
+
+## Get enhanced physics tire model config
+func get_tire_model_config() -> Dictionary:
+	return cars.get("enhanced_physics", {}).get("tire_model", {})
+
+## Get enhanced physics weight transfer config
+func get_weight_transfer_config() -> Dictionary:
+	return cars.get("enhanced_physics", {}).get("weight_transfer", {})
+
+## Get enhanced physics collision config
+func get_collision_config() -> Dictionary:
+	return cars.get("enhanced_physics", {}).get("collision", {})
+
+## Get enhanced physics handbrake config
+func get_handbrake_config() -> Dictionary:
+	return cars.get("enhanced_physics", {}).get("handbrake", {})
+
+## Get enhanced physics counter-steer config
+func get_counter_steer_config() -> Dictionary:
+	return cars.get("enhanced_physics", {}).get("counter_steer", {})
+
 # =============================================================================
 # AI Config Helpers
 # =============================================================================

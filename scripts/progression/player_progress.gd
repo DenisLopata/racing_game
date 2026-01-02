@@ -9,6 +9,8 @@ signal part_purchased(part_id: String, category: PartData.Category)
 signal part_equipped(part_id: String, category: PartData.Category)
 signal wins_changed(new_wins: int)
 signal car_color_changed(new_color: Color)
+signal damage_changed(part: String, new_health: float)
+signal part_repaired(part: String)
 
 const SAVE_PATH: String = "user://player_progress.json"
 
@@ -32,11 +34,29 @@ var wins: int = 0
 var races_completed: int = 0
 var car_color_index: int = 0  # Index into CAR_COLORS
 
+## Career statistics (for Statistics Dashboard)
+var statistics: Dictionary = {
+	"total_races": 0,
+	"podiums": 0,  # Top 3 finishes
+	"dnfs": 0,
+	"total_currency_earned": 0,
+	"best_lap_times": {},  # track_id -> time
+	"track_play_counts": {},  # track_id -> count
+	"total_damage_taken": 0.0,
+	"total_repairs": 0,
+	"total_repair_cost": 0,
+	"average_finish_position": 0.0,
+	"position_history": []  # Recent positions for average calculation
+}
+
 ## Parts tracking - category string -> Array of part IDs
 ## Using strings for JSON compatibility, but validated against PartData.Category
 var _unlocked_parts: Dictionary = {}  # "engines" -> ["stock", "basic"]
 var _owned_parts: Dictionary = {}     # "engines" -> ["stock"]
 var _equipped: Dictionary = {}        # "engines" -> "stock"
+
+## Damage tracking
+var _damage_state: CarDamageState = null
 
 func _ready() -> void:
 	_init_defaults()
@@ -56,6 +76,9 @@ func _init_defaults() -> void:
 		_unlocked_parts[cat_str] = [default_id]
 		_owned_parts[cat_str] = [default_id]
 
+	# Initialize damage state (fully repaired)
+	_damage_state = CarDamageState.new()
+
 ## Save progress to file
 func save_progress() -> void:
 	var data: Dictionary = {
@@ -65,7 +88,9 @@ func save_progress() -> void:
 		"car_color_index": car_color_index,
 		"unlocked_parts": _unlocked_parts,
 		"owned_parts": _owned_parts,
-		"equipped": _equipped
+		"equipped": _equipped,
+		"damage": _damage_state.to_dict() if _damage_state else {},
+		"statistics": statistics
 	}
 
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -105,6 +130,20 @@ func load_progress() -> void:
 					_owned_parts[cat_str] = loaded_owned[cat_str]
 				if cat_str in loaded_equipped:
 					_equipped[cat_str] = loaded_equipped[cat_str]
+
+			# Load damage state
+			var loaded_damage: Dictionary = data.get("damage", {})
+			if not loaded_damage.is_empty():
+				_damage_state = CarDamageState.from_dict(loaded_damage)
+			else:
+				_damage_state = CarDamageState.new()
+
+			# Load statistics
+			var loaded_stats: Dictionary = data.get("statistics", {})
+			if not loaded_stats.is_empty():
+				# Merge loaded stats with defaults (for backwards compatibility)
+				for key in loaded_stats.keys():
+					statistics[key] = loaded_stats[key]
 
 			print("[PlayerProgress] Loaded: %d currency, %d wins" % [currency, wins])
 
@@ -352,3 +391,216 @@ func reset_progress() -> void:
 	_init_defaults()
 	save_progress()
 	print("[PlayerProgress] Progress reset!")
+
+# =============================================================================
+# Damage Management
+# =============================================================================
+
+## Get current damage state
+func get_damage_state() -> CarDamageState:
+	if _damage_state == null:
+		_damage_state = CarDamageState.new()
+	return _damage_state
+
+## Apply damage to a specific part
+func apply_damage(part: String, amount: float) -> void:
+	if _damage_state == null:
+		_damage_state = CarDamageState.new()
+
+	_damage_state.apply_damage(part, amount)
+	damage_changed.emit(part, _damage_state.get_part_health(part))
+	save_progress()
+
+## Update damage state from DamageSystem after a race
+func sync_damage_from_race(damage_state: CarDamageState) -> void:
+	if damage_state == null:
+		return
+
+	_damage_state = damage_state.duplicate_state()
+	save_progress()
+
+## Repair a specific part (costs currency)
+func repair_part(part: String) -> bool:
+	if _damage_state == null:
+		return false
+
+	var cost = get_repair_cost(part)
+	if cost <= 0:
+		return false  # Nothing to repair
+
+	if not can_afford(cost):
+		print("[PlayerProgress] Cannot afford repair: %d needed, have %d" % [cost, currency])
+		return false
+
+	spend_currency(cost)
+	_damage_state.repair_part(part)
+	part_repaired.emit(part)
+	damage_changed.emit(part, 1.0)
+	record_repair(cost)  # Track in statistics
+	print("[PlayerProgress] Repaired %s for %d" % [part, cost])
+	return true
+
+## Repair all parts (costs currency)
+func repair_all() -> bool:
+	if _damage_state == null:
+		return false
+
+	var total_cost = get_total_repair_cost()
+	if total_cost <= 0:
+		return false  # Nothing to repair
+
+	if not can_afford(total_cost):
+		print("[PlayerProgress] Cannot afford full repair: %d needed, have %d" % [total_cost, currency])
+		return false
+
+	spend_currency(total_cost)
+	_damage_state.repair_all()
+
+	for part in _damage_state.part_health:
+		part_repaired.emit(part)
+		damage_changed.emit(part, 1.0)
+
+	record_repair(total_cost)  # Track in statistics
+	print("[PlayerProgress] Repaired all parts for %d" % total_cost)
+	return true
+
+## Get repair cost for a specific part
+func get_repair_cost(part: String) -> int:
+	if _damage_state == null:
+		return 0
+
+	var health = _damage_state.get_part_health(part)
+	if health >= 1.0:
+		return 0
+
+	var damage_percent = 1.0 - health
+	var config = DamageConfig.load_from_config()
+	return config.get_repair_cost(part, damage_percent)
+
+## Get total repair cost for all damaged parts
+func get_total_repair_cost() -> int:
+	if _damage_state == null:
+		return 0
+
+	var config = DamageConfig.load_from_config()
+	return config.get_total_repair_cost(_damage_state.part_health)
+
+## Check if any parts are damaged
+func has_damage() -> bool:
+	if _damage_state == null:
+		return false
+	return _damage_state.has_damage()
+
+## Check if any parts have failed
+func has_failed_parts() -> bool:
+	if _damage_state == null:
+		return false
+	return _damage_state.has_failed_parts()
+
+# =============================================================================
+# Statistics Tracking
+# =============================================================================
+
+## Record statistics from a completed race
+func record_race_stats(result: Dictionary) -> void:
+	var position: int = result.get("position", 0)
+	var track_id: String = result.get("track_id", "unknown")
+	var best_lap: float = result.get("best_lap", 0.0)
+	var is_dnf: bool = result.get("dnf", false)
+	var damage_taken: float = result.get("damage_taken", 0.0)
+	var reward: int = result.get("reward", 0)
+
+	# Update race counts
+	statistics["total_races"] = statistics.get("total_races", 0) + 1
+
+	# Update podiums (top 3)
+	if position >= 1 and position <= 3 and not is_dnf:
+		statistics["podiums"] = statistics.get("podiums", 0) + 1
+
+	# Track DNFs
+	if is_dnf:
+		statistics["dnfs"] = statistics.get("dnfs", 0) + 1
+
+	# Track currency earned
+	statistics["total_currency_earned"] = statistics.get("total_currency_earned", 0) + reward
+
+	# Track best lap times per track
+	if best_lap > 0 and not is_dnf:
+		var best_times: Dictionary = statistics.get("best_lap_times", {})
+		if track_id not in best_times or best_lap < best_times[track_id]:
+			best_times[track_id] = best_lap
+			statistics["best_lap_times"] = best_times
+
+	# Track play counts per track
+	var play_counts: Dictionary = statistics.get("track_play_counts", {})
+	play_counts[track_id] = play_counts.get(track_id, 0) + 1
+	statistics["track_play_counts"] = play_counts
+
+	# Track damage taken
+	statistics["total_damage_taken"] = statistics.get("total_damage_taken", 0.0) + damage_taken
+
+	# Update average finish position (last 20 races)
+	if position > 0 and not is_dnf:
+		var history: Array = statistics.get("position_history", [])
+		history.append(position)
+		if history.size() > 20:
+			history.pop_front()
+		statistics["position_history"] = history
+
+		# Calculate average
+		var total: float = 0.0
+		for pos in history:
+			total += pos
+		statistics["average_finish_position"] = total / history.size()
+
+	save_progress()
+
+## Track repair in statistics
+func record_repair(cost: int) -> void:
+	statistics["total_repairs"] = statistics.get("total_repairs", 0) + 1
+	statistics["total_repair_cost"] = statistics.get("total_repair_cost", 0) + cost
+	save_progress()
+
+## Get win rate percentage
+func get_win_rate() -> float:
+	var total_races: int = statistics.get("total_races", 0)
+	if total_races <= 0:
+		return 0.0
+	return (float(wins) / float(total_races)) * 100.0
+
+## Get favorite track (most played)
+func get_favorite_track() -> String:
+	var play_counts: Dictionary = statistics.get("track_play_counts", {})
+	if play_counts.is_empty():
+		return "None"
+
+	var favorite: String = ""
+	var max_plays: int = 0
+	for track_id in play_counts.keys():
+		if play_counts[track_id] > max_plays:
+			max_plays = play_counts[track_id]
+			favorite = track_id
+	return favorite
+
+## Get best lap time for a track
+func get_best_lap_time(track_id: String) -> float:
+	var best_times: Dictionary = statistics.get("best_lap_times", {})
+	return best_times.get(track_id, 0.0)
+
+## Get statistics summary for display
+func get_statistics_summary() -> Dictionary:
+	return {
+		"total_races": statistics.get("total_races", 0),
+		"wins": wins,
+		"podiums": statistics.get("podiums", 0),
+		"dnfs": statistics.get("dnfs", 0),
+		"win_rate": get_win_rate(),
+		"average_position": statistics.get("average_finish_position", 0.0),
+		"total_currency_earned": statistics.get("total_currency_earned", 0),
+		"favorite_track": get_favorite_track(),
+		"total_damage_taken": statistics.get("total_damage_taken", 0.0),
+		"total_repairs": statistics.get("total_repairs", 0),
+		"total_repair_cost": statistics.get("total_repair_cost", 0),
+		"best_lap_times": statistics.get("best_lap_times", {}),
+		"track_play_counts": statistics.get("track_play_counts", {})
+	}

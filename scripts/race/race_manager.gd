@@ -16,6 +16,7 @@ signal race_started()
 signal race_finished(results: Array)
 signal car_registered(car: Car, car_id: int)
 signal car_finished(car: Car, position: int, total_time: float)
+signal car_dnf(car: Car, reason: String)
 
 # Race configuration
 @export var total_laps: int = 3
@@ -40,6 +41,10 @@ func _ready() -> void:
 	countdown_timer.timeout.connect(_on_countdown_timer_timeout)
 	add_child(countdown_timer)
 
+	# Connect to damage system for DNF events
+	if DamageSystem:
+		DamageSystem.car_totaled.connect(_on_car_totaled)
+
 ## Register a car to participate in the race
 func register_car(car: Car) -> int:
 	var car_id = next_car_id
@@ -57,7 +62,9 @@ func register_car(car: Car) -> int:
 		"finish_time": 0.0,
 		"finish_position": 0,
 		"checkpoints_passed": 0,
-		"last_checkpoint": -1
+		"last_checkpoint": -1,
+		"dnf": false,
+		"dnf_reason": ""
 	}
 
 	car_registered.emit(car, car_id)
@@ -103,6 +110,13 @@ func _start_race() -> void:
 	for car_id in car_data.keys():
 		car_data[car_id]["current_lap_start"] = race_start_time
 		car_data[car_id]["laps"] = 0
+		car_data[car_id]["dnf"] = false
+		car_data[car_id]["dnf_reason"] = ""
+
+	# Start damage tracking for all cars
+	if DamageSystem:
+		for car in registered_cars:
+			DamageSystem.start_race_tracking(car)
 
 	race_state_changed.emit(state)
 	race_started.emit()
@@ -193,8 +207,75 @@ func _finish_race() -> void:
 	state = RaceState.FINISHED
 	race_state_changed.emit(state)
 
+	# Sync player damage to progress
+	_sync_player_damage()
+
+	# Record statistics for player
+	_record_player_stats()
+
 	var results = get_race_results()
 	race_finished.emit(results)
+
+## Record player statistics after race
+func _record_player_stats() -> void:
+	if not PlayerProgress:
+		return
+
+	# Find the player car and their result
+	for car in registered_cars:
+		if car.get("use_player_upgrades"):
+			var data = car_data.get(car.car_id, {})
+			if data.is_empty():
+				continue
+
+			# Get track ID
+			var track_id = "unknown"
+			if GameSettings:
+				if GameSettings.is_procedural_track:
+					track_id = "procedural_%d" % GameSettings.procedural_seed
+				else:
+					track_id = GameSettings.selected_track
+
+			# Calculate damage taken this race
+			var damage_taken: float = 0.0
+			var damage_percent: float = 0.0
+			var damage_report = data.get("damage_report", null)
+			if damage_report and damage_report is DamageReport:
+				damage_taken = damage_report.get_total_damage_delta()
+				damage_percent = damage_report.get_final_damage_percent()
+
+			# Build stats result
+			var stats_result = {
+				"position": data.get("finish_position", 0),
+				"track_id": track_id,
+				"best_lap": data.get("lap_times", []).min() if data.get("lap_times", []).size() > 0 else 0.0,
+				"lap_times": data.get("lap_times", []),
+				"dnf": data.get("dnf", false),
+				"damage_taken": damage_taken,
+				"damage_percent": damage_percent,
+				"reward": 0  # Reward is added separately in complete_race
+			}
+
+			PlayerProgress.record_race_stats(stats_result)
+
+			# Update challenges
+			if ChallengeManager:
+				ChallengeManager.on_race_completed(stats_result)
+
+			break
+
+## Sync player's damage state to PlayerProgress for persistence
+func _sync_player_damage() -> void:
+	if not PlayerProgress or not DamageSystem:
+		return
+
+	# Find the player car (has use_player_upgrades = true)
+	for car in registered_cars:
+		if car.get("use_player_upgrades"):
+			var damage_state = DamageSystem.get_damage_state(car)
+			if damage_state:
+				PlayerProgress.sync_damage_from_race(damage_state)
+			break
 
 ## Force finish the race (e.g., when leader finishes)
 func force_finish_race() -> void:
@@ -216,6 +297,8 @@ func force_finish_race() -> void:
 			car_data[car_id]["finish_position"] = position
 			position += 1
 
+	# Sync player damage before finishing
+	_sync_player_damage()
 	_finish_race()
 
 ## Get sorted race results
@@ -223,17 +306,46 @@ func get_race_results() -> Array:
 	var results = []
 	for car_id in car_data.keys():
 		var data = car_data[car_id]
+		var car = data["car"]
+
+		# Get damage report for this car
+		var damage_report: DamageReport = null
+		if DamageSystem:
+			damage_report = DamageSystem.finalize_race_report(car)
+
 		results.append({
 			"car_id": car_id,
-			"car": data["car"],
+			"car": car,
 			"position": data["finish_position"],
 			"total_time": data["finish_time"],
 			"laps": data["laps"],
 			"lap_times": data["lap_times"],
-			"best_lap": data["lap_times"].min() if data["lap_times"].size() > 0 else 0.0
+			"best_lap": data["lap_times"].min() if data["lap_times"].size() > 0 else 0.0,
+			"dnf": data["dnf"],
+			"dnf_reason": data["dnf_reason"],
+			"damage_report": damage_report
 		})
 
-	results.sort_custom(func(a, b): return a["position"] < b["position"])
+	# Sort: finished cars by position, DNF cars at the end
+	results.sort_custom(func(a, b):
+		# DNF cars go to the end
+		if a["dnf"] != b["dnf"]:
+			return not a["dnf"]  # Non-DNF first
+		# Both DNF or both finished - sort by position (but DNF has -1)
+		if a["dnf"]:
+			return a["total_time"] < b["total_time"]  # DNFs by time
+		return a["position"] < b["position"]
+	)
+
+	# Reassign positions for display (DNF gets last positions)
+	var pos = 1
+	for result in results:
+		if result["dnf"]:
+			result["position"] = -1  # Keep as DNF indicator
+		else:
+			result["position"] = pos
+			pos += 1
+
 	return results
 
 ## Get current positions during race
@@ -310,3 +422,55 @@ func full_reset() -> void:
 ## Check if race is active
 func is_racing() -> bool:
 	return state == RaceState.RACING
+
+# =============================================================================
+# DNF / Car Totaling
+# =============================================================================
+
+## Handle car totaled signal from DamageSystem
+func _on_car_totaled(car: Node, reason: String) -> void:
+	if state != RaceState.RACING:
+		return
+
+	if not car is Car:
+		return
+
+	var car_id = car.car_id
+	if car_id not in car_data:
+		return
+
+	var data = car_data[car_id]
+	if data["finished"] or data["dnf"]:
+		return
+
+	# Mark as DNF
+	var current_time = Time.get_ticks_msec() / 1000.0
+	data["dnf"] = true
+	data["dnf_reason"] = reason
+	data["finished"] = true
+	data["finish_time"] = current_time - race_start_time
+	data["finish_position"] = -1  # -1 indicates DNF
+
+	# Update damage report with DNF status
+	if DamageSystem:
+		var report = DamageSystem.get_damage_report(car)
+		if report:
+			report.is_dnf = true
+			report.dnf_reason = reason
+
+	car_dnf.emit(car, reason)
+
+	# Check if race should end
+	_check_race_complete()
+
+## Check if a car is DNF
+func is_car_dnf(car: Car) -> bool:
+	if car.car_id not in car_data:
+		return false
+	return car_data[car.car_id]["dnf"]
+
+## Get DNF reason for a car
+func get_dnf_reason(car: Car) -> String:
+	if car.car_id not in car_data:
+		return ""
+	return car_data[car.car_id]["dnf_reason"]

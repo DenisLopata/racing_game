@@ -7,6 +7,10 @@ const RainEffectScene = preload("res://scenes/effects/rain_effect.tscn")
 const FogEffectScene = preload("res://scenes/effects/fog_effect.tscn")
 const PauseMenuScene = preload("res://scenes/UI/pause_menu.tscn")
 const CheckpointScene = preload("res://scenes/world/checkpoint.tscn")
+const CameraShakeScript = preload("res://scripts/camera/camera_shake.gd")
+const AchievementPopupScript = preload("res://scenes/UI/achievement_popup.gd")
+const GhostCarScene = preload("res://scenes/entities/ghost_car.tscn")
+const MinimapScene = preload("res://scenes/UI/minimap.tscn")
 
 ## Number of AI opponents
 @export var num_ai_opponents: int = 7
@@ -22,12 +26,27 @@ const CheckpointScene = preload("res://scenes/world/checkpoint.tscn")
 @onready var speedometer: Speedometer = %Speedometer
 @onready var lap_tracker: LapTracker = $LapTracker
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
+@onready var pit_stop_zone: PitStopZone = $PitStopZone
 
 var countdown_overlay: CountdownOverlay
 var results_screen: ResultsScreen
 var pause_menu: CanvasLayer
+var achievement_popup: AchievementPopup
 var player_car: Car
 var ai_cars: Array[Car] = []
+var _last_player_position: int = -1
+
+## Time Attack Mode
+var is_time_attack: bool = false
+var ghost_car: GhostCar = null
+var time_attack_track_id: String = ""
+
+## Minimap
+var minimap: Minimap = null
+
+## Enhanced HUD elements
+var driving_hud: DrivingHUD = null
+var circular_tachometer: CircularTachometer = null
 
 ## Smart pathfinding components
 var track_analyzer: TrackAnalyzer
@@ -40,6 +59,7 @@ var checkpoint_system: CheckpointSystem
 
 ## Camera zoom settings (loaded from config)
 var camera: Camera2D
+var camera_shake: CameraShake
 var zoom_level: float = 1.0
 var ZOOM_MIN: float = 0.2
 var ZOOM_MAX: float = 2.0
@@ -92,6 +112,10 @@ func _load_from_config() -> void:
 	camera = car.get_node_or_null("Camera2D")
 	if camera:
 		zoom_level = camera.zoom.x
+		# Add camera shake effect
+		camera_shake = CameraShake.new()
+		camera_shake.name = "CameraShake"
+		camera.add_child(camera_shake)
 
 	# Assign player controller to the car
 	var player_controller = PlayerController.new()
@@ -105,6 +129,11 @@ func _load_from_config() -> void:
 	# Show car stats on speedometer
 	if speedometer and car.part_modifiers:
 		speedometer.set_car_stats(car.part_modifiers)
+
+	# Initialize gear and RPM display
+	if speedometer:
+		speedometer.set_gear(1)  # Start in first gear
+		speedometer.set_rpm(0.0)
 
 	# Apply player's selected car color
 	if PlayerProgress:
@@ -136,26 +165,48 @@ func _apply_game_settings() -> void:
 	num_ai_opponents = GameSettings.opponent_count
 	selected_ai_difficulty = GameSettings.ai_difficulty
 
+	# Check for Time Attack mode
+	is_time_attack = GameSettings.is_time_attack
+	if is_time_attack:
+		num_ai_opponents = 0  # Solo mode
+		_setup_time_attack()
+
 	# Apply weather
 	_apply_weather(GameSettings.weather)
 
 ## Apply weather effects
 func _apply_weather(weather: String) -> void:
+	# Use the new weather system
+	if surface_manager and surface_manager.has_method("set_weather"):
+		surface_manager.set_weather(weather)
+		weather_grip_modifier = surface_manager.weather_grip_mult
+	else:
+		# Fallback to legacy system
+		match weather:
+			"clear":
+				weather_grip_modifier = 1.0
+			"rain":
+				weather_grip_modifier = 0.7
+			"heavy_rain":
+				weather_grip_modifier = 0.5
+			"fog":
+				weather_grip_modifier = 0.95
+			"snow":
+				weather_grip_modifier = 0.4
+			"dry_hot":
+				weather_grip_modifier = 1.1
+			_:
+				weather_grip_modifier = 1.0
+
+		if surface_manager and surface_manager.has_method("set_weather_modifier"):
+			surface_manager.set_weather_modifier(weather_grip_modifier)
+
+	# Spawn visual effects based on weather
 	match weather:
-		"clear":
-			weather_grip_modifier = 1.0
-		"rain":
-			weather_grip_modifier = 0.7
+		"rain", "heavy_rain":
 			_spawn_rain_effect()
 		"fog":
-			weather_grip_modifier = 0.9
 			_spawn_fog_effect()
-		_:
-			weather_grip_modifier = 1.0
-
-	# Apply to surface manager if it supports weather
-	if surface_manager and surface_manager.has_method("set_weather_modifier"):
-		surface_manager.set_weather_modifier(weather_grip_modifier)
 
 func _spawn_rain_effect() -> void:
 	var rain = RainEffectScene.instantiate()
@@ -183,15 +234,121 @@ func _setup_race_ui() -> void:
 	pause_menu.quit_requested.connect(_on_quit_requested)
 	add_child(pause_menu)
 
+	# Create achievement popup
+	achievement_popup = AchievementPopup.new()
+	add_child(achievement_popup)
+
+	# Create minimap
+	_setup_minimap()
+
+	# Create enhanced driving HUD elements
+	_setup_driving_hud()
+
 	# Connect signals
 	car.drift_marks_finished.connect(_on_car_drift_marks_finished)
 	car.update_speed.connect(_on_car_update_speed)
+	car.gear_changed.connect(_on_car_gear_changed)
 	RaceManager.race_state_changed.connect(_on_race_state_changed)
 	RaceManager.car_finished.connect(_on_car_finished)
+
+	# Connect camera shake to damage system (player car only)
+	if DamageSystem and camera_shake:
+		DamageSystem.damage_taken.connect(_on_damage_for_shake)
+
+	# Connect pit stop zone to speedometer for UI updates
+	if pit_stop_zone and speedometer:
+		speedometer.set_player_car(car)
+		speedometer.connect_pit_stop_zone(pit_stop_zone)
 
 	# Start countdown after a short delay
 	await get_tree().create_timer(0.5).timeout
 	RaceManager.start_countdown()
+
+func _setup_item_spawns() -> void:
+	if not ItemManager or not line_generator:
+		return
+
+	# Don't spawn items in Time Attack mode
+	if is_time_attack:
+		return
+
+	var racing_line = line_generator.center_line
+	if racing_line.size() < 10:
+		return
+
+	# Place 4-6 item spawn points evenly around the track
+	var num_spawns = 5
+	var spawn_points: Array[Vector2] = []
+
+	for i in num_spawns:
+		var progress = float(i) / float(num_spawns)
+		var point_index = int(progress * racing_line.size())
+		var spawn_pos = racing_line[point_index]
+
+		# Offset slightly from racing line (alternate sides)
+		var next_index = (point_index + 1) % racing_line.size()
+		var direction = (racing_line[next_index] - spawn_pos).normalized()
+		var perpendicular = direction.rotated(PI / 2)
+		var offset = perpendicular * (30.0 if i % 2 == 0 else -30.0)
+
+		spawn_points.append(spawn_pos + offset)
+
+	ItemManager.setup_spawn_points(spawn_points)
+	print("[Main] Set up %d item spawn points" % spawn_points.size())
+
+func _setup_minimap() -> void:
+	minimap = MinimapScene.instantiate() as Minimap
+	minimap.name = "Minimap"
+
+	# Position in top-right corner
+	minimap.anchor_left = 1.0
+	minimap.anchor_right = 1.0
+	minimap.anchor_top = 0.0
+	minimap.anchor_bottom = 0.0
+	minimap.offset_left = -160
+	minimap.offset_right = -10
+	minimap.offset_top = 10
+	minimap.offset_bottom = 160
+
+	# Add to a CanvasLayer so it stays on screen
+	var minimap_layer = CanvasLayer.new()
+	minimap_layer.name = "MinimapLayer"
+	minimap_layer.layer = 10
+	add_child(minimap_layer)
+	minimap_layer.add_child(minimap)
+
+	# Set player car reference
+	minimap.set_player_car(player_car)
+
+	# Track data will be set after track analysis in _analyze_track_and_generate_paths
+
+func _setup_driving_hud() -> void:
+	# Create a canvas layer for the driving HUD
+	var hud_layer = CanvasLayer.new()
+	hud_layer.name = "DrivingHUDLayer"
+	hud_layer.layer = 5
+	add_child(hud_layer)
+
+	# Create driving HUD (drift info, weight transfer, etc.)
+	driving_hud = DrivingHUD.new()
+	driving_hud.name = "DrivingHUD"
+	driving_hud.anchor_right = 1.0
+	driving_hud.anchor_bottom = 1.0
+	hud_layer.add_child(driving_hud)
+
+	# Create circular tachometer (bottom-right, above speedometer)
+	circular_tachometer = CircularTachometer.new()
+	circular_tachometer.name = "CircularTachometer"
+	circular_tachometer.anchor_left = 1.0
+	circular_tachometer.anchor_right = 1.0
+	circular_tachometer.anchor_top = 1.0
+	circular_tachometer.anchor_bottom = 1.0
+	circular_tachometer.offset_left = -130
+	circular_tachometer.offset_right = -10
+	circular_tachometer.offset_top = -130
+	circular_tachometer.offset_bottom = -50
+	circular_tachometer.radius = 45.0
+	hud_layer.add_child(circular_tachometer)
 
 func _analyze_track_and_generate_paths() -> void:
 
@@ -216,6 +373,13 @@ func _analyze_track_and_generate_paths() -> void:
 	debug_drawer.name = "PathDebugDrawer"
 	add_child(debug_drawer)
 	debug_drawer.setup(line_generator)
+
+	# 5. Setup minimap with track outline
+	if minimap and line_generator:
+		minimap.setup_track(line_generator.center_line)
+
+	# 6. Setup item spawn points on track
+	_setup_item_spawns()
 
 func _create_waypoint_path_from_points(points: PackedVector2Array, path_name: String, speed_hints: Array[float] = []) -> WaypointPath:
 	var path = WaypointPath.new()
@@ -357,6 +521,10 @@ func _spawn_ai_cars() -> void:
 
 		ai_cars.append(ai_car)
 
+	# Update minimap with AI cars
+	if minimap:
+		minimap.set_ai_cars(ai_cars)
+
 func _create_tire_marks_for_ai() -> Line2D:
 	var tire_marks = Line2D.new()
 	tire_marks.width = 2
@@ -411,6 +579,7 @@ func _process(_delta: float) -> void:
 	# Update position display during race
 	if RaceManager.is_racing():
 		_update_position_display()
+		_update_driving_hud()
 
 func _update_position_display() -> void:
 	var total_cars = RaceManager.registered_cars.size()
@@ -419,11 +588,50 @@ func _update_position_display() -> void:
 	if player_position > 0:
 		speedometer.set_race_position(player_position, total_cars)
 
+		# Notify achievement manager of position changes
+		if player_position != _last_player_position and AchievementManager:
+			AchievementManager.on_position_changed(player_position, total_cars)
+		_last_player_position = player_position
+
 	# Update lap display
 	var player_data = RaceManager.get_car_lap_data(player_car.car_id)
 	if player_data.size() > 0:
 		var current_lap = player_data.get("laps", 0) + 1
 		speedometer.set_total_laps(current_lap, RaceManager.total_laps)
+
+func _update_driving_hud() -> void:
+	if not player_car:
+		return
+
+	# Update circular tachometer
+	if circular_tachometer:
+		var rpm = player_car.get_rpm_percent()
+		var gear = player_car.get_current_gear()
+		circular_tachometer.set_rpm_gear(rpm, gear)
+
+	# Update driving HUD
+	if driving_hud:
+		# Update drift display
+		driving_hud.update_drift(
+			player_car.current_slip_angle,
+			player_car.is_drifting,
+			player_car.velocity.length()
+		)
+
+		# Update handbrake indicator
+		driving_hud.update_handbrake(player_car.is_handbrake_active)
+
+		# Update weight transfer display
+		var weight_data = player_car.get_weight_transfer_data()
+		driving_hud.update_weight_transfer(
+			weight_data.front,
+			weight_data.rear,
+			weight_data.left,
+			weight_data.right
+		)
+
+		# Update slip angle debug (if visible)
+		driving_hud.update_slip_angle(player_car.current_slip_angle)
 
 func _on_race_state_changed(new_state: RaceManager.RaceState) -> void:
 	match new_state:
@@ -431,8 +639,12 @@ func _on_race_state_changed(new_state: RaceManager.RaceState) -> void:
 			# Race started - initialize UI
 			speedometer.set_total_laps(1, RaceManager.total_laps)
 			speedometer.set_race_position(1, RaceManager.registered_cars.size())
+			# Start time attack recording
+			_on_time_attack_lap_start()
 		RaceManager.RaceState.FINISHED:
 			# Race finished - show results
+			if is_time_attack:
+				TimeAttackManager.end_time_attack()
 			_show_results()
 
 func _show_results() -> void:
@@ -485,6 +697,10 @@ func _on_car_finished(finished_car: Car, position: int, total_time: float) -> vo
 func _on_lap_tracker_lap_completed(lap_number: int, lap_time: float) -> void:
 	speedometer.set_lap(str(lap_number))
 	speedometer.set_lap_time("%.2f" % lap_time)
+
+	# Process time attack lap completion
+	if is_time_attack:
+		_on_time_attack_lap_complete(lap_time)
 	
 func _on_lap_tracker_race_finished(lap_times: Array) -> void:
 	#speedometer.set_speed(speed)
@@ -492,18 +708,112 @@ func _on_lap_tracker_race_finished(lap_times: Array) -> void:
 	
 func _on_car_update_speed(speed: String) -> void:
 	speedometer.set_speed(speed)
+
+	# Update RPM display if player car has transmission
+	if player_car and player_car.transmission:
+		var rpm_percent = player_car.transmission.get_rpm_percent()
+		speedometer.set_rpm(rpm_percent)
+
+func _on_car_gear_changed(gear: int) -> void:
+	if speedometer:
+		speedometer.set_gear(gear)
 	
 func _on_car_drift_marks_finished(points: PackedVector2Array) -> void:
 	if points.size() < 2:
 		return
-	
+
 	var skid = Line2D.new()
 	skid.width = 2
 	skid.default_color = Color(0,0,0,0.6) # dark grey
-	skid.points = points.duplicate()      # copy so it doesn’t get cleared
+	skid.points = points.duplicate()      # copy so it doesn't get cleared
 	skid.modulate.a = 0.2;
 	skid.width = 10;
 	add_child(skid)
 
 	# Optional: move to a dedicated "Skidmarks" Node2D layer
 	#$Skidmarks.add_child(skid)
+
+func _on_damage_for_shake(damaged_car: Node, _part: String, _amount: float, _new_health: float) -> void:
+	# Only shake camera for player car damage
+	if damaged_car != player_car or not camera_shake:
+		return
+
+	# Get impact speed from car velocity
+	var impact_speed = player_car.velocity.length()
+	var intensity = CameraShake.intensity_from_speed(impact_speed)
+
+	if intensity > 0:
+		camera_shake.shake(intensity)
+
+# =============================================================================
+# Time Attack Mode
+# =============================================================================
+
+func _setup_time_attack() -> void:
+	if not TimeAttackManager:
+		return
+
+	# Determine track ID
+	if GameSettings.is_procedural_track:
+		time_attack_track_id = "procedural_%d" % GameSettings.procedural_seed
+	else:
+		time_attack_track_id = GameSettings.selected_track
+
+	# Initialize time attack mode
+	TimeAttackManager.start_time_attack(time_attack_track_id)
+
+	# Spawn ghost car if we have a best time
+	if TimeAttackManager.has_ghost():
+		_spawn_ghost_car()
+
+	# Update UI to show best time
+	if speedometer:
+		var best_time = TimeAttackManager.get_best_time()
+		if best_time > 0:
+			speedometer.set_best_lap_time(best_time)
+
+func _spawn_ghost_car() -> void:
+	ghost_car = GhostCarScene.instantiate() as GhostCar
+	ghost_car.name = "GhostCar"
+	ghost_car.initialize(TimeAttackManager)
+	add_child(ghost_car)
+	print("[Main] Spawned ghost car for Time Attack")
+
+func _physics_process(delta: float) -> void:
+	# Record player position for time attack ghost
+	if is_time_attack and TimeAttackManager and player_car:
+		TimeAttackManager.process_recording(player_car, delta)
+
+func _on_time_attack_lap_start() -> void:
+	if not is_time_attack or not TimeAttackManager:
+		return
+
+	# Start recording new lap
+	TimeAttackManager.start_lap_recording(player_car)
+
+	# Start ghost playback
+	if ghost_car:
+		ghost_car.start_playback()
+
+func _on_time_attack_lap_complete(lap_time: float) -> void:
+	if not is_time_attack or not TimeAttackManager:
+		return
+
+	# Finish recording and check for new best
+	var is_new_best = TimeAttackManager.finish_lap_recording(lap_time)
+
+	if is_new_best:
+		print("[Main] NEW BEST LAP: %.3f" % lap_time)
+		# Show notification
+		if speedometer:
+			speedometer.show_new_best_notification()
+			speedometer.set_best_lap_time(lap_time)
+
+		# Spawn/update ghost car
+		if not ghost_car:
+			_spawn_ghost_car()
+
+	# Start recording next lap
+	TimeAttackManager.start_lap_recording(player_car)
+	if ghost_car:
+		ghost_car.start_playback()

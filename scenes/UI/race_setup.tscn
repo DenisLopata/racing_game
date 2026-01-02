@@ -190,6 +190,32 @@ text = "Load Saved Track"
 [node name="ProceduralSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/ProceduralOptions"]
 layout_mode = 2
 
+[node name="ModeRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ModeTitle" type="Label" parent="ScrollContainer/VBoxContainer/ModeRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "MODE:"
+
+[node name="ModePrev" type="Button" parent="ScrollContainer/VBoxContainer/ModeRow"]
+custom_minimum_size = Vector2(40, 30)
+layout_mode = 2
+text = "<"
+
+[node name="ModeValue" type="Label" parent="ScrollContainer/VBoxContainer/ModeRow"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Normal Race"
+horizontal_alignment = 1
+
+[node name="ModeNext" type="Button" parent="ScrollContainer/VBoxContainer/ModeRow"]
+custom_minimum_size = Vector2(40, 30)
+layout_mode = 2
+text = ">"
+
 [node name="LapsRow" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 10
@@ -367,6 +393,8 @@ horizontal_alignment = 1
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/ProceduralOptions/TurnsRow/TurnsNext" to="." method="_on_turns_next_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/ProceduralOptions/LoadSavedButton" to="." method="_on_load_saved_pressed"]
 [connection signal="pressed" from="SavedTracksPopup/VBoxContainer/Header/CloseButton" to="." method="_on_saved_tracks_close_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/ModeRow/ModePrev" to="." method="_on_mode_prev_pressed"]
+[connection signal="pressed" from="ScrollContainer/VBoxContainer/ModeRow/ModeNext" to="." method="_on_mode_next_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/LapsRow/LapsPrev" to="." method="_on_laps_prev_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/LapsRow/LapsNext" to="." method="_on_laps_next_pressed"]
 [connection signal="pressed" from="ScrollContainer/VBoxContainer/OpponentsRow/OpponentsPrev" to="." method="_on_opponents_prev_pressed"]

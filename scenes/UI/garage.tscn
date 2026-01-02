@@ -118,6 +118,14 @@ size_flags_horizontal = 3
 theme = ExtResource("3_theme")
 text = "SUSPENSION"
 
+[node name="CosmeticsTab" type="Button" parent="VBoxContainer/TabsContainer"]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_theme")
+theme_override_colors/font_color = Color(0.8, 0.6, 1, 1)
+text = "COSMETICS"
+
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
 layout_mode = 2
 
@@ -166,6 +174,135 @@ layout_mode = 2
 theme = ExtResource("3_theme")
 text = "CHANGE COLOR"
 
+[node name="DamageSeparator" type="HSeparator" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+layout_mode = 2
+
+[node name="DamageLabel" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "DAMAGE"
+horizontal_alignment = 1
+
+[node name="DamageContainer" type="VBoxContainer" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EngineRow" type="HBoxContainer" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/EngineRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "ENG"
+
+[node name="EngineBar" type="ProgressBar" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/EngineRow"]
+custom_minimum_size = Vector2(80, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+show_percentage = false
+
+[node name="EngineRepair" type="Button" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/EngineRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "FIX"
+
+[node name="TiresRow" type="HBoxContainer" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/TiresRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "TIR"
+
+[node name="TiresBar" type="ProgressBar" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/TiresRow"]
+custom_minimum_size = Vector2(80, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+show_percentage = false
+
+[node name="TiresRepair" type="Button" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/TiresRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "FIX"
+
+[node name="BrakesRow" type="HBoxContainer" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/BrakesRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "BRK"
+
+[node name="BrakesBar" type="ProgressBar" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/BrakesRow"]
+custom_minimum_size = Vector2(80, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+show_percentage = false
+
+[node name="BrakesRepair" type="Button" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/BrakesRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "FIX"
+
+[node name="SuspensionRow" type="HBoxContainer" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SuspensionRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "SUS"
+
+[node name="SuspensionBar" type="ProgressBar" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SuspensionRow"]
+custom_minimum_size = Vector2(80, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+show_percentage = false
+
+[node name="SuspensionRepair" type="Button" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SuspensionRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "FIX"
+
+[node name="SpoilerRow" type="HBoxContainer" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SpoilerRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "SPO"
+
+[node name="SpoilerBar" type="ProgressBar" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SpoilerRow"]
+custom_minimum_size = Vector2(80, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+show_percentage = false
+
+[node name="SpoilerRepair" type="Button" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SpoilerRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "FIX"
+
+[node name="RepairAllButton" type="Button" parent="VBoxContainer/ContentRow/CarPreview/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+theme = ExtResource("3_theme")
+text = "REPAIR ALL"
+
 [node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/ContentRow"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -177,6 +314,49 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme = ExtResource("3_theme")
 theme_override_constants/separation = 8
+
+[node name="CosmeticsContainer" type="ScrollContainer" parent="VBoxContainer/ContentRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme = ExtResource("3_theme")
+
+[node name="CosmeticsVBox" type="VBoxContainer" parent="VBoxContainer/ContentRow/CosmeticsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="SubTabs" type="HBoxContainer" parent="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="LiveryTab" type="Button" parent="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox/SubTabs"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_theme")
+text = "LIVERIES"
+
+[node name="DecalTab" type="Button" parent="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox/SubTabs"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_theme")
+text = "DECALS"
+
+[node name="WheelsTab" type="Button" parent="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox/SubTabs"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("3_theme")
+text = "WHEELS"
+
+[node name="CosmeticsItems" type="VBoxContainer" parent="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 6
 
 [node name="ColorPopup" type="PanelContainer" parent="."]
 visible = false
@@ -225,5 +405,15 @@ text = "CLOSE"
 [connection signal="pressed" from="VBoxContainer/TabsContainer/SpoilersTab" to="." method="_on_spoilers_tab_pressed"]
 [connection signal="pressed" from="VBoxContainer/TabsContainer/BrakesTab" to="." method="_on_brakes_tab_pressed"]
 [connection signal="pressed" from="VBoxContainer/TabsContainer/SuspensionsTab" to="." method="_on_suspensions_tab_pressed"]
+[connection signal="pressed" from="VBoxContainer/TabsContainer/CosmeticsTab" to="." method="_on_cosmetics_tab_pressed"]
 [connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/ChangeColorButton" to="." method="_on_change_color_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/EngineRow/EngineRepair" to="." method="_on_engine_repair_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/TiresRow/TiresRepair" to="." method="_on_tires_repair_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/BrakesRow/BrakesRepair" to="." method="_on_brakes_repair_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SuspensionRow/SuspensionRepair" to="." method="_on_suspension_repair_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/DamageContainer/SpoilerRow/SpoilerRepair" to="." method="_on_spoiler_repair_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CarPreview/VBoxContainer/RepairAllButton" to="." method="_on_repair_all_pressed"]
 [connection signal="pressed" from="ColorPopup/VBoxContainer/CloseButton" to="." method="_on_close_popup_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox/SubTabs/LiveryTab" to="." method="_on_livery_subtab_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox/SubTabs/DecalTab" to="." method="_on_decal_subtab_pressed"]
+[connection signal="pressed" from="VBoxContainer/ContentRow/CosmeticsContainer/CosmeticsVBox/SubTabs/WheelsTab" to="." method="_on_wheels_subtab_pressed"]

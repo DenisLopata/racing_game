@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=4 uid="uid://dnwunbwqfhyfd"]
+[gd_scene load_steps=10 format=4 uid="uid://dnwunbwqfhyfd"]
 
 [ext_resource type="PackedScene" uid="uid://bidpihbx86rla" path="res://scenes/entites/car.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://d0s11mmp1qfok" path="res://scenes/world/main.gd" id="1_sugp2"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://bg854dvn4ir4j" path="res://scenes/world/start_line.gd" id="5_j0r68"]
 [ext_resource type="Script" uid="uid://f8l54dhhexxv" path="res://scripts/laps/lap_tracker.gd" id="7_j0r68"]
 [ext_resource type="TileSet" uid="uid://track_tileset_shared" path="res://assets/tilesets/track_tileset.tres" id="9_tileset"]
+[ext_resource type="PackedScene" uid="uid://pit_stop_zone_scene" path="res://scenes/race/pit_stop_zone.tscn" id="10_pitstop"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_sugp2")
@@ -32,6 +33,9 @@ script = ExtResource("4_wbupf")
 
 [node name="LapTracker" type="Node" parent="."]
 script = ExtResource("7_j0r68")
+
+[node name="PitStopZone" parent="." instance=ExtResource("10_pitstop")]
+position = Vector2(350, 400)
 
 [node name="UI" type="CanvasLayer" parent="."]
 

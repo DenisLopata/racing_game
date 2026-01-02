@@ -7,7 +7,13 @@
       "brake_force": 800.0,
       "rotation_speed": 3.2,
       "air_drag_coeff": 0.0004,
-      "drift_threshold": 70.0
+      "drift_threshold": 70.0,
+      "use_enhanced_physics": true,
+      "tire_grip_coefficient": 1.2,
+      "weight_transfer_intensity": 0.5,
+      "collision_bounce": 0.5,
+      "handbrake_grip_reduction": 0.3,
+      "counter_steer_assist": 0.4
     },
     "realistic": {
       "acceleration": 300.0,
@@ -16,7 +22,13 @@
       "brake_force": 500.0,
       "rotation_speed": 2.2,
       "air_drag_coeff": 0.0008,
-      "drift_threshold": 120.0
+      "drift_threshold": 120.0,
+      "use_enhanced_physics": true,
+      "tire_grip_coefficient": 1.0,
+      "weight_transfer_intensity": 1.0,
+      "collision_bounce": 0.3,
+      "handbrake_grip_reduction": 0.15,
+      "counter_steer_assist": 0.1
     },
     "hybrid": {
       "acceleration": 400.0,
@@ -25,13 +37,97 @@
       "brake_force": 600.0,
       "rotation_speed": 2.6,
       "air_drag_coeff": 0.0006,
-      "drift_threshold": 100.0
+      "drift_threshold": 100.0,
+      "use_enhanced_physics": true,
+      "tire_grip_coefficient": 1.1,
+      "weight_transfer_intensity": 0.7,
+      "collision_bounce": 0.4,
+      "handbrake_grip_reduction": 0.2,
+      "counter_steer_assist": 0.25
+    },
+    "drift": {
+      "acceleration": 420.0,
+      "max_speed": 320.0,
+      "friction": 250.0,
+      "brake_force": 550.0,
+      "rotation_speed": 3.0,
+      "air_drag_coeff": 0.0005,
+      "drift_threshold": 60.0,
+      "use_enhanced_physics": true,
+      "tire_grip_coefficient": 0.9,
+      "weight_transfer_intensity": 0.9,
+      "collision_bounce": 0.35,
+      "handbrake_grip_reduction": 0.25,
+      "counter_steer_assist": 0.35
     }
   },
   "drivetrain_modifiers": {
-    "FWD": { "steering_mult": 1.0, "lateral_grip": 0.4 },
-    "RWD": { "steering_mult": 1.2, "lateral_grip": 0.05 },
-    "AWD": { "steering_mult": 0.8, "lateral_grip": 0.2 }
+    "FWD": {
+      "steering_mult": 1.0,
+      "lateral_grip": 0.4,
+      "front_drive_ratio": 1.0,
+      "rear_drive_ratio": 0.0,
+      "understeer_tendency": 0.3,
+      "oversteer_tendency": 0.1,
+      "weight_distribution": "front_heavy",
+      "engine_type": "inline4",
+      "description": "Front-wheel drive - stable, predictable, slight understeer"
+    },
+    "RWD": {
+      "steering_mult": 1.2,
+      "lateral_grip": 0.05,
+      "front_drive_ratio": 0.0,
+      "rear_drive_ratio": 1.0,
+      "understeer_tendency": 0.1,
+      "oversteer_tendency": 0.4,
+      "weight_distribution": "rear_heavy",
+      "engine_type": "v6",
+      "description": "Rear-wheel drive - tail-happy, great for drifting"
+    },
+    "AWD": {
+      "steering_mult": 0.8,
+      "lateral_grip": 0.2,
+      "front_drive_ratio": 0.4,
+      "rear_drive_ratio": 0.6,
+      "understeer_tendency": 0.2,
+      "oversteer_tendency": 0.2,
+      "weight_distribution": "balanced",
+      "engine_type": "v6",
+      "description": "All-wheel drive - balanced grip, excellent traction"
+    },
+    "MR": {
+      "steering_mult": 1.3,
+      "lateral_grip": 0.1,
+      "front_drive_ratio": 0.0,
+      "rear_drive_ratio": 1.0,
+      "understeer_tendency": 0.05,
+      "oversteer_tendency": 0.5,
+      "weight_distribution": "mid_engine",
+      "engine_type": "v8",
+      "description": "Mid-engine rear drive - razor sharp, snap oversteer risk"
+    },
+    "FR": {
+      "steering_mult": 1.1,
+      "lateral_grip": 0.15,
+      "front_drive_ratio": 0.0,
+      "rear_drive_ratio": 1.0,
+      "understeer_tendency": 0.15,
+      "oversteer_tendency": 0.35,
+      "weight_distribution": "front_heavy",
+      "engine_type": "v8",
+      "description": "Front-engine rear drive - classic muscle car, power oversteer"
+    },
+    "4WD": {
+      "steering_mult": 0.9,
+      "lateral_grip": 0.3,
+      "front_drive_ratio": 0.5,
+      "rear_drive_ratio": 0.5,
+      "understeer_tendency": 0.25,
+      "oversteer_tendency": 0.15,
+      "weight_distribution": "balanced",
+      "engine_type": "inline4",
+      "description": "Part-time 4WD - rally style, good on loose surfaces"
+    }
   },
   "physics": {
     "reverse_acceleration_mult": 0.6,
@@ -39,6 +135,118 @@
     "steering_min_strength": 0.2,
     "steering_max_strength": 1.0,
     "lateral_grip_clamp_min": 0.3,
-    "lateral_grip_clamp_max": 1.0
+    "lateral_grip_clamp_max": 1.0,
+    "max_angular_velocity": 6.0,
+    "angular_velocity_decay": 3.0
+  },
+  "enhanced_physics": {
+    "tire_model": {
+      "peak_slip_angle": 8.0,
+      "falloff_sharpness": 0.8,
+      "load_sensitivity": 0.7,
+      "types": {
+        "stock": {
+          "grip_coefficient": 1.0,
+          "peak_slip_angle": 10.0,
+          "falloff": 0.7
+        },
+        "sport": {
+          "grip_coefficient": 1.15,
+          "peak_slip_angle": 8.0,
+          "falloff": 0.8
+        },
+        "drift": {
+          "grip_coefficient": 0.85,
+          "peak_slip_angle": 12.0,
+          "falloff": 0.5
+        },
+        "racing": {
+          "grip_coefficient": 1.3,
+          "peak_slip_angle": 6.0,
+          "falloff": 0.9
+        },
+        "offroad": {
+          "grip_coefficient": 0.9,
+          "peak_slip_angle": 15.0,
+          "falloff": 0.4
+        }
+      }
+    },
+    "weight_transfer": {
+      "wheelbase": 2.5,
+      "cog_height": 0.5,
+      "longitudinal_rate": 8.0,
+      "lateral_rate": 6.0,
+      "distributions": {
+        "front_heavy": {
+          "static_front": 0.6,
+          "static_rear": 0.4
+        },
+        "rear_heavy": {
+          "static_front": 0.4,
+          "static_rear": 0.6
+        },
+        "balanced": {
+          "static_front": 0.5,
+          "static_rear": 0.5
+        },
+        "mid_engine": {
+          "static_front": 0.42,
+          "static_rear": 0.58
+        }
+      }
+    },
+    "transmission": {
+      "gear_count": 6,
+      "shift_delay": 0.15,
+      "optimal_shift_rpm": 7000,
+      "downshift_rpm": 3000,
+      "gear_ratios": [3.8, 2.4, 1.7, 1.25, 0.95, 0.75],
+      "final_drive": 3.5
+    },
+    "collision": {
+      "wall_restitution": 0.4,
+      "car_restitution": 0.6,
+      "spin_factor": 0.015,
+      "max_spin_rate": 8.0,
+      "friction_coefficient": 0.5
+    },
+    "handbrake": {
+      "rear_grip_multiplier": 0.2,
+      "front_grip_multiplier": 1.0,
+      "spin_boost": 1.5,
+      "deceleration": 400.0,
+      "lock_threshold": 0.5
+    },
+    "counter_steer": {
+      "detection_threshold": 15.0,
+      "assist_strength": 0.3,
+      "recovery_bonus": 1.2,
+      "angle_correction_rate": 2.0
+    }
+  },
+  "audio": {
+    "engine_types": {
+      "inline4": {
+        "base_frequency": 80.0,
+        "max_frequency": 350.0,
+        "exhaust_pop_chance": 0.2
+      },
+      "v6": {
+        "base_frequency": 70.0,
+        "max_frequency": 400.0,
+        "exhaust_pop_chance": 0.35
+      },
+      "v8": {
+        "base_frequency": 60.0,
+        "max_frequency": 450.0,
+        "exhaust_pop_chance": 0.5
+      },
+      "electric": {
+        "base_frequency": 200.0,
+        "max_frequency": 800.0,
+        "exhaust_pop_chance": 0.0
+      }
+    }
   }
 }

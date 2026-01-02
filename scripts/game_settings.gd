@@ -7,12 +7,16 @@ var master_volume: float = 1.0
 var music_volume: float = 0.8
 var sfx_volume: float = 1.0
 
+# Visual settings (saved to disk)
+var screen_shake_enabled: bool = true
+
 # Race settings (set by race_setup, read by main.gd)
 var selected_track: String = "sunset_circuit"
 var lap_count: int = 3
 var opponent_count: int = 7
 var weather: String = "clear"
 var ai_difficulty: String = "medium"
+var is_time_attack: bool = false
 
 # Procedural track settings (per-session)
 var is_procedural_track: bool = false
@@ -29,22 +33,24 @@ const SETTINGS_PATH = "user://settings.cfg"
 func _ready() -> void:
 	load_settings()
 
-## Save audio settings to disk
+## Save settings to disk
 func save_settings() -> void:
 	var config = ConfigFile.new()
 	config.set_value("audio", "master_volume", master_volume)
 	config.set_value("audio", "music_volume", music_volume)
 	config.set_value("audio", "sfx_volume", sfx_volume)
+	config.set_value("visual", "screen_shake_enabled", screen_shake_enabled)
 	config.save(SETTINGS_PATH)
 	_apply_audio_settings()
 
-## Load audio settings from disk
+## Load settings from disk
 func load_settings() -> void:
 	var config = ConfigFile.new()
 	if config.load(SETTINGS_PATH) == OK:
 		master_volume = config.get_value("audio", "master_volume", 1.0)
 		music_volume = config.get_value("audio", "music_volume", 0.8)
 		sfx_volume = config.get_value("audio", "sfx_volume", 1.0)
+		screen_shake_enabled = config.get_value("visual", "screen_shake_enabled", true)
 	_apply_audio_settings()
 
 ## Apply audio settings to the audio buses

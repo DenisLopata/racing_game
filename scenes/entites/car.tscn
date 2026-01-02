@@ -1,7 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://bidpihbx86rla"]
+[gd_scene load_steps=13 format=3 uid="uid://bidpihbx86rla"]
 
 [ext_resource type="Script" uid="uid://bt1y43v65uvdc" path="res://scenes/entites/car.gd" id="1_qt2eu"]
 [ext_resource type="Texture2D" uid="uid://dj6qoj5u77c64" path="res://assets/sprites/cars/base_car.png" id="2_qt2eu"]
+[ext_resource type="Script" path="res://scripts/damage/effects/damage_effects.gd" id="3_damage_fx"]
+[ext_resource type="Script" path="res://scripts/damage/effects/damage_audio.gd" id="4_damage_audio"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sugp2"]
 size = Vector2(20, 32)
@@ -17,6 +19,93 @@ curve = SubResource("Curve_qt2eu")
 lifetime_randomness = 0.15
 particle_flag_disable_z = true
 scale_curve = SubResource("CurveTexture_50v30")
+
+[sub_resource type="Curve" id="Curve_smoke_alpha"]
+_data = [Vector2(0, 0.7), 0.0, 0.0, 0, 0, Vector2(0.4, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_smoke"]
+curve = SubResource("Curve_smoke_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
+lifetime_randomness = 0.3
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 3.0
+direction = Vector3(0, -1, 0)
+spread = 25.0
+initial_velocity_min = 15.0
+initial_velocity_max = 35.0
+gravity = Vector3(0, -15, 0)
+scale_min = 0.4
+scale_max = 1.2
+scale_curve = SubResource("CurveTexture_smoke")
+color = Color(0.25, 0.25, 0.25, 0.5)
+
+[sub_resource type="Curve" id="Curve_spark_scale"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_spark"]
+curve = SubResource("Curve_spark_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+lifetime_randomness = 0.4
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 2.0
+direction = Vector3(0, 0, 0)
+spread = 180.0
+initial_velocity_min = 60.0
+initial_velocity_max = 120.0
+gravity = Vector3(0, 150, 0)
+scale_min = 0.2
+scale_max = 0.6
+scale_curve = SubResource("CurveTexture_spark")
+color = Color(1, 0.75, 0.15, 1)
+
+[sub_resource type="Curve" id="Curve_tire_smoke"]
+_data = [Vector2(0, 0.8), 0.0, 0.0, 0, 0, Vector2(0.5, 0.6), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_tire"]
+curve = SubResource("Curve_tire_smoke")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_tire_smoke"]
+lifetime_randomness = 0.2
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 6.0
+direction = Vector3(0, -1, 0)
+spread = 60.0
+initial_velocity_min = 30.0
+initial_velocity_max = 60.0
+gravity = Vector3(0, -10, 0)
+scale_min = 0.8
+scale_max = 2.0
+scale_curve = SubResource("CurveTexture_tire")
+color = Color(0.2, 0.2, 0.2, 0.7)
+
+[sub_resource type="Gradient" id="Gradient_fire"]
+colors = PackedColorArray(1, 0.9, 0.2, 1, 1, 0.4, 0.1, 1, 0.3, 0.1, 0.05, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture_fire"]
+gradient = SubResource("Gradient_fire")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_fire"]
+lifetime_randomness = 0.3
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 4.0
+direction = Vector3(0, -1, 0)
+spread = 20.0
+initial_velocity_min = 25.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, -40, 0)
+scale_min = 0.4
+scale_max = 1.0
+scale_curve = SubResource("CurveTexture_smoke")
+color_ramp = SubResource("GradientTexture_fire")
 
 [node name="Car" type="CharacterBody2D"]
 script = ExtResource("1_qt2eu")
@@ -38,3 +127,38 @@ process_material = SubResource("ParticleProcessMaterial_qt2eu")
 
 [node name="TiremarksPos" type="Marker2D" parent="."]
 position = Vector2(0, 18)
+
+[node name="DamageEffects" type="Node2D" parent="."]
+script = ExtResource("3_damage_fx")
+
+[node name="EngineSmoke" type="GPUParticles2D" parent="DamageEffects"]
+position = Vector2(0, -12)
+emitting = false
+amount = 15
+process_material = SubResource("ParticleProcessMaterial_smoke")
+lifetime = 1.2
+
+[node name="CollisionSparks" type="GPUParticles2D" parent="DamageEffects"]
+emitting = false
+amount = 16
+process_material = SubResource("ParticleProcessMaterial_sparks")
+lifetime = 0.35
+one_shot = true
+explosiveness = 0.85
+
+[node name="DamageAudio" type="Node" parent="DamageEffects"]
+script = ExtResource("4_damage_audio")
+
+[node name="TireSmoke" type="GPUParticles2D" parent="DamageEffects"]
+position = Vector2(0, 14)
+emitting = false
+amount = 25
+process_material = SubResource("ParticleProcessMaterial_tire_smoke")
+lifetime = 1.0
+
+[node name="EngineFire" type="GPUParticles2D" parent="DamageEffects"]
+position = Vector2(0, -10)
+emitting = false
+amount = 20
+process_material = SubResource("ParticleProcessMaterial_fire")
+lifetime = 0.8

@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3 uid="uid://tire_smoke_effect"]
+
+[sub_resource type="Curve" id="Curve_alpha"]
+_data = [Vector2(0, 0.7), 0.0, 0.0, 0, 0, Vector2(0.4, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_alpha"]
+curve = SubResource("Curve_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_tire_smoke"]
+lifetime_randomness = 0.2
+particle_flag_disable_z = true
+emission_shape = 1
+emission_sphere_radius = 8.0
+direction = Vector3(0, 1, 0)
+spread = 45.0
+initial_velocity_min = 30.0
+initial_velocity_max = 60.0
+gravity = Vector3(0, -10, 0)
+scale_min = 0.8
+scale_max = 2.0
+scale_curve = SubResource("CurveTexture_alpha")
+color = Color(0.4, 0.4, 0.4, 0.5)
+
+[node name="TireSmoke" type="GPUParticles2D"]
+emitting = false
+amount = 25
+process_material = SubResource("ParticleProcessMaterial_tire_smoke")
+lifetime = 1.2
+speed_scale = 1.5

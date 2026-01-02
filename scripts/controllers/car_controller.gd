@@ -8,11 +8,14 @@ class InputState:
 	var throttle: float = 0.0  # 0.0 to 1.0 (accelerate)
 	var brake: float = 0.0     # 0.0 to 1.0 (brake/reverse)
 	var steer: float = 0.0     # -1.0 (left) to 1.0 (right)
+	var handbrake: float = 0.0 # 0.0 to 1.0 (handbrake/e-brake for drifting)
+	var clutch: float = 0.0    # 0.0 to 1.0 (clutch kick for drift initiation)
 
-	func _init(t: float = 0.0, b: float = 0.0, s: float = 0.0) -> void:
+	func _init(t: float = 0.0, b: float = 0.0, s: float = 0.0, h: float = 0.0) -> void:
 		throttle = t
 		brake = b
 		steer = s
+		handbrake = h
 
 ## Reference to the car being controlled (set by car when controller is assigned)
 var car: Node = null

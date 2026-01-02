@@ -55,6 +55,41 @@ static func _get_part_data(category: PartData.Category, part_id: String) -> Part
 static func defaults() -> CarModifiers:
 	return CarModifiers.new()
 
+## Create modifiers from equipped parts with damage applied
+## damage_state: CarDamageState with current part health values
+static func from_equipped_with_damage(equipped: Dictionary, damage_state: CarDamageState) -> CarModifiers:
+	var modifiers = from_equipped(equipped)
+	modifiers.apply_damage(damage_state)
+	return modifiers
+
+## Apply damage degradation to modifiers
+func apply_damage(damage_state: CarDamageState) -> void:
+	if damage_state == null:
+		return
+
+	# Engine damage affects acceleration and max speed
+	acceleration_mult *= damage_state.get_effectiveness("engines", "acceleration")
+	max_speed_mult *= damage_state.get_effectiveness("engines", "max_speed")
+
+	# Brake damage affects braking
+	brake_mult *= damage_state.get_effectiveness("brakes", "brake")
+
+	# Suspension damage affects rotation and lateral grip
+	rotation_mult *= damage_state.get_effectiveness("suspensions", "rotation")
+	lateral_grip_mult *= damage_state.get_effectiveness("suspensions", "lateral_grip")
+
+	# Tire damage affects grip and causes more drift
+	grip_mult *= damage_state.get_effectiveness("tires", "grip")
+	lateral_grip_mult *= damage_state.get_effectiveness("tires", "lateral_grip")
+	# Damaged tires = more drift (inverse relationship)
+	var tire_health = damage_state.get_part_health("tires")
+	if tire_health < 1.0:
+		var drift_increase = damage_state.get_effectiveness("tires", "drift")
+		drift_mult *= drift_increase  # drift_increase > 1 when damaged
+
+	# Spoiler damage affects drag
+	drag_mult *= damage_state.get_effectiveness("spoilers", "drag")
+
 ## Get a summary string for debugging
 func get_summary() -> String:
 	return "CarModifiers: accel=%.2f speed=%.2f brake=%.2f rot=%.2f grip=%.2f drift=%.2f" % [

@@ -21,6 +21,12 @@ ConfigManager="*res://scripts/config/config_manager.gd"
 RaceManager="*res://scripts/race/race_manager.gd"
 GameSettings="*res://scripts/game_settings.gd"
 PlayerProgress="*res://scripts/progression/player_progress.gd"
+DamageSystem="*res://scripts/damage/damage_system.gd"
+AchievementManager="*res://scripts/progression/achievement_manager.gd"
+ChallengeManager="*res://scripts/progression/challenge_manager.gd"
+TimeAttackManager="*res://scripts/race/time_attack_manager.gd"
+ItemManager="*res://scripts/items/item_manager.gd"
+CosmeticsManager="*res://scripts/customization/cosmetics_manager.gd"
 
 [display]
 

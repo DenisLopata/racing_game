@@ -10,12 +10,14 @@ var lap_options = [1, 3, 5, 10]
 var opponent_options = [0, 3, 5, 7]
 var weather_options: Array = []
 var difficulty_options = ["Easy", "Medium", "Hard", "Expert"]
+var mode_options = ["Normal Race", "Time Attack"]
 
 # Procedural track options
 var size_options = ["Small", "Medium", "Large"]
 var turns_options = ["Few Turns", "Moderate", "Many Turns"]
 
 # Current selections (indices)
+var mode_index: int = 0  # Default: Normal Race
 var lap_index: int = 1  # Default: 3 laps
 var opponent_index: int = 3  # Default: 7 opponents
 var weather_index: int = 0  # Default: Clear
@@ -28,8 +30,11 @@ var turns_index: int = 1  # Default: Moderate
 # UI references
 @onready var track_label: Label = $ScrollContainer/VBoxContainer/TrackRow/TrackLabel
 @onready var locked_label: Label = $ScrollContainer/VBoxContainer/LockedLabel
+@onready var mode_label: Label = $ScrollContainer/VBoxContainer/ModeRow/ModeValue
 @onready var lap_label: Label = $ScrollContainer/VBoxContainer/LapsRow/LapsValue
 @onready var opponent_label: Label = $ScrollContainer/VBoxContainer/OpponentsRow/OpponentsValue
+@onready var opponent_row: HBoxContainer = $ScrollContainer/VBoxContainer/OpponentsRow
+@onready var difficulty_row: HBoxContainer = $ScrollContainer/VBoxContainer/DifficultyRow
 @onready var weather_label: Label = $ScrollContainer/VBoxContainer/WeatherRow/WeatherValue
 @onready var difficulty_label: Label = $ScrollContainer/VBoxContainer/DifficultyRow/DifficultyValue
 @onready var start_button: Button = $ScrollContainer/VBoxContainer/StartButton
@@ -73,6 +78,17 @@ func _update_all_labels() -> void:
 		size_label.text = size_options[size_index]
 		turns_label.text = turns_options[turns_index]
 
+	# Mode
+	mode_label.text = mode_options[mode_index]
+	var is_time_attack = mode_index == 1
+
+	# In Time Attack mode: hide opponents and difficulty (solo mode)
+	opponent_row.visible = not is_time_attack
+	difficulty_row.visible = not is_time_attack
+
+	# Update start button text
+	start_button.text = "START TIME ATTACK" if is_time_attack else "START RACE"
+
 	# Settings
 	lap_label.text = str(lap_options[lap_index])
 	opponent_label.text = str(opponent_options[opponent_index])
@@ -86,6 +102,15 @@ func _on_track_prev_pressed() -> void:
 
 func _on_track_next_pressed() -> void:
 	current_track_index = (current_track_index + 1) % tracks.size()
+	_update_all_labels()
+
+# Mode navigation
+func _on_mode_prev_pressed() -> void:
+	mode_index = (mode_index - 1 + mode_options.size()) % mode_options.size()
+	_update_all_labels()
+
+func _on_mode_next_pressed() -> void:
+	mode_index = (mode_index + 1) % mode_options.size()
 	_update_all_labels()
 
 # Laps navigation
@@ -129,9 +154,12 @@ func _on_back_button_pressed() -> void:
 
 func _on_start_button_pressed() -> void:
 	# Save settings to GameSettings
+	var is_time_attack = mode_index == 1
+
 	GameSettings.selected_track = tracks[current_track_index]["id"]
 	GameSettings.lap_count = lap_options[lap_index]
-	GameSettings.opponent_count = opponent_options[opponent_index]
+	GameSettings.is_time_attack = is_time_attack
+	GameSettings.opponent_count = 0 if is_time_attack else opponent_options[opponent_index]
 	GameSettings.weather = weather_options[weather_index].to_lower()
 	GameSettings.ai_difficulty = difficulty_options[difficulty_index].to_lower()
 
